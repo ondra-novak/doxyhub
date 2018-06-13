@@ -1,0 +1,2 @@
+# doxyhub
+Doxygen automatic generator
