@@ -21,9 +21,19 @@
 							<builder id="cdt.managedbuild.target.gnu.builder.base.1808798394" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.159604090" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1992469742" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
+								<option id="gnu.cpp.compiler.option.include.paths.1132348100" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/doxyhub/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/doxyhub/src/couchit/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/doxyhub/src/imtjson/src}&quot;"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1835937626" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.1252766685" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
+								<option id="gnu.c.compiler.option.include.paths.1767497682" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/doxyhub/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/doxyhub/src/couchit/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/doxyhub/src/imtjson/src}&quot;"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.2083330869" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.1272396568" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base"/>
@@ -34,6 +44,11 @@
 								</inputType>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.base.1968917139" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
+								<option id="gnu.both.asm.option.include.paths.1344370773" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/doxyhub/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/doxyhub/src/couchit/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/doxyhub/src/imtjson/src}&quot;"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.575740666" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -46,10 +61,16 @@
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="doxyhub.null.1192307668" name="doxyhub"/>
 	</storageModule>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="refreshScope"/>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.552754686;cdt.managedbuild.toolchain.gnu.base.552754686.316194852;cdt.managedbuild.tool.gnu.c.compiler.base.1252766685;cdt.managedbuild.tool.gnu.c.compiler.input.2083330869">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.552754686;cdt.managedbuild.toolchain.gnu.base.552754686.316194852;cdt.managedbuild.tool.gnu.cpp.compiler.base.1992469742;cdt.managedbuild.tool.gnu.cpp.compiler.input.1835937626">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+	</storageModule>
 </cproject>

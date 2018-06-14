@@ -4,5 +4,5 @@ file(GLOB docbuilder_SRC "*.cpp" )
 file(GLOB docbuilder_HDR "*.h" "*.tcc")
 
 add_executable (docbuilder ${docbuilder_SRC} )
-target_link_libraries (docbuilder LINK_PUBLIC couchit imtjson ssl crypto pthread)
+target_link_libraries (docbuilder LINK_PUBLIC simpleServer couchit imtjson ssl crypto pthread)
 install(TARGETS docbuilder DESTINATION "bin") 
