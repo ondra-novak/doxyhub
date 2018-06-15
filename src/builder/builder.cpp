@@ -12,7 +12,7 @@
 #include <simpleServer/exceptions.h>
 #include <sys/stat.h>
 #include <sstream>
-
+#include <fstream>
 
 namespace doxyhub {
 
@@ -164,18 +164,6 @@ void Builder::prepareDoxyfile(const std::string& source,const std::string& targe
 		throw SystemException(err, "prepareDoxyfile: Failed to open target file:" + target);
 	}
 
-//	trg << "DOXYFILE_ENCODING"
-
-	std::string line;
-	std::getline(src,line);
-	while (!line.empty() || !src.eof()) {
-		StrViewA linev(line);
-		linev = linev.trim(isspace);
-		if (!linev.empty() && linev[0] != '#') {
-
-		}
-		std::getline(src,line);
-	}
 }
 
 } /* namespace doxyhub */
