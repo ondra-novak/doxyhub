@@ -7,6 +7,7 @@
 
 #include <unistd.h>
 #include <builder/builder.h>
+#include <builder/doxyfile.h>
 #include <dirent.h>
 #include <shared/raii.h>
 #include <simpleServer/exceptions.h>
@@ -44,11 +45,11 @@ void recursive_erase(std::string path) {
 	Dir dir(dirptr);
 
 
-	dirent dent, *entry;
+	const dirent *entry;
 
-	readdir_r(dir,&dent,&entry);
 	auto pathlen = path.length();
-	while (entry) {
+
+	while ((entry = readdir(dir)) != nullptr) {
 		if (!isDots(entry->d_name)) {
 			path.resize(pathlen);
 			path.push_back('/');
@@ -66,7 +67,6 @@ void recursive_erase(std::string path) {
 				}
 			}
 		}
-		readdir_r(dir,&dent,&entry);
 	}
 }
 
@@ -84,24 +84,59 @@ static void makeDir(const std::string &name) {
 
 }
 
-std::string get_git_last_revision(ExternalProcessLogToFile &&git, const std::string &url) {
-	std::ostringstream out;
-	git.setOutput(&out);
+class ExternalProcessWithLog: public ExternalProcess {
+public:
+	std::ostringstream output;
+	std::ostringstream error;
+
+	using ExternalProcess::ExternalProcess;
+
+	virtual void onLogOutput(StrViewA line, bool error) {
+		if (error) this->error << line;
+		else this->output << line;
+	}
+
+	void clear() {
+		output = std::ostringstream();
+		error = std::ostringstream();
+	}
+
+
+
+};
+
+
+std::string get_git_last_revision(ExternalProcessWithLog &&git, const std::string &url) {
 	int res = git.execute({"ls-remote", url});
 	if (res != 0) throw std::runtime_error("GIT:Cannot retrive last revision for url: " + url);
 	std::string rev;
-	std::istringstream in(out.str());
+	std::istringstream in(git.output.str());
 	in >> rev;
+	git.clear();
 	return rev;
 }
 
-void Builder::buildDoc(const std::string& url, const std::string& output_name, std::string &revision) {
+static std::string combineLogs(std::ostringstream &git, std::ostringstream &doxygen) {
+	std::ostringstream tmp;
+	tmp << "-------- DOWNLOAD ------------" << std::endl;
+	tmp << git.str() << std::endl;
+	tmp << "-------- GENERATE ------------" << std::endl;
+	tmp << doxygen.str() << std::endl;
+	return tmp.str();
+}
 
-	ExternalProcessLogToFile doxygen(cfg.doxygen,envVars,cfg.activityTimeout, cfg.totalTimeout);
-	ExternalProcessLogToFile git(cfg.doxygen,envVars,cfg.activityTimeout, cfg.totalTimeout);
+void Builder::buildDoc(const std::string& url, const std::string& output_name, const std::string &revision) {
+
+
+	ExternalProcessWithLog doxygen(cfg.doxygen,envVars,cfg.activityTimeout, cfg.totalTimeout);
+	ExternalProcessWithLog git(cfg.doxygen,envVars,cfg.activityTimeout, cfg.totalTimeout);
 
 	std::string curRev = get_git_last_revision(std::move(git), url);
 
+
+	this->revision = curRev;
+	this->log.clear();
+	this->warnings.clear();
 	if (curRev == revision) return;
 
 	std::string path = cfg.output + output_name;
@@ -115,28 +150,32 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, s
 	makeDir(priv);
 	makeDir(unpack);
 	makeDir(build);
-	std::ostringstream log;
 
+	git.set_start_dir(unpack);
+	doxygen.set_start_dir(unpack);
 
-	doxygen.setOutput(&log);
-	git.setOutput(&log);
 
 	int res = git.execute({"clone","--progress","--depth","1",url,"."});;
 	if (res != 0) {
-		this->log = log.str();
+		this->log = git.output.str();
+		this->warnings = git.error.str();
 		throw std::runtime_error("GIT:clone failed for url: " + url);
 	}
 
 	std::string doxyfile = unpack+"/Doxyfile";
-	std::string adj_doxyfile = priv+"/Doxyfile";
+	std::string adj_doxyfile = adj_doxyfile;
 	if (access(doxyfile.c_str(),0)) {
 		doxyfile = cfg.doxyfile;
 	}
-	prepareDoxyfile(doxyfile, adj_doxyfile);
+
+	prepareDoxyfile(doxyfile, adj_doxyfile, build);
 
 	res = doxygen.execute({adj_doxyfile});
+
+	this->log = combineLogs(git.output, doxygen.output);
+	this->warnings = combineLogs(git.error, doxygen.error);
+
 	if (res != 0)  {
-		this->log = log.str();
 		throw std::runtime_error("Doxygen failed for url: " + url);
 	}
 
@@ -145,25 +184,44 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, s
 		throw SystemException(err, "Failed to update storage: " + path);
 	}
 
-	revision = curRev;
-
 
 }
 
-void Builder::prepareDoxyfile(const std::string& source,const std::string& target) {
+static StrViewA extractNameFromURL(StrViewA url) {
+	auto p = url.lastIndexOf("/");
+	if (p == url.npos) return url;
+	else return url.substr(p+1);
 
-	std::ifstream src(source);
-	if (!src) {
-		int err = errno;
-		throw SystemException(err, "prepareDoxyfile: Failed to open source file:" + source);
+}
+
+void Builder::prepareDoxyfile(const std::string& source,const std::string& target, const std::string &buildPath) {
+
+	Doxyfile df;
+	{
+		std::ifstream src(source);
+		if (!src) {
+			int err = errno;
+			throw SystemException(err, "prepareDoxyfile: Failed to open source file:" + source);
+		}
+
+
+		df.parse(src);
 	}
 
-	std::ofstream trg(target, std::ios::out| std::ios::trunc);
-	if (!trg) {
-		int err = errno;
-		throw SystemException(err, "prepareDoxyfile: Failed to open target file:" + target);
-	}
 
+	StrViewA name = extractNameFromURL(source);
+	df.sanitize(buildPath, name, revision);
+
+	{
+		std::ofstream trg(target, std::ios::out| std::ios::trunc);
+		if (!trg) {
+			int err = errno;
+			throw SystemException(err, "prepareDoxyfile: Failed to open target file:" + target);
+		}
+
+		df.serialize(trg);
+
+	}
 }
 
 } /* namespace doxyhub */

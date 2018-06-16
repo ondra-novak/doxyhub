@@ -11,7 +11,7 @@
 #include <shared/stringview.h>
 #include <string>
 #include <vector>
-#include <unordered_map>
+#include <map>
 
 namespace doxyhub {
 
@@ -24,18 +24,32 @@ public:
 	void parse(std::istream &instrm);
 	void serialize(std::ostream &outstrm);
 
-	void sanitize(StrViewA sourcePath, StrViewA targetPath);
+
+	static std::string sanitizePaths(const std::string &value);
+
+
+
+	void sanitize(StrViewA targetPath,
+				StrViewA projectName,
+				StrViewA revision) ;
+
+	void erase(const StrViewA &name);
+	std::string &operator[](const StrViewA &name);
+	const std::string &operator[](const StrViewA &name) const;
+
 
 
 protected:
 
 
-	typedef std::unordered_map<std::string,std::string> KeyValueMap;
+	typedef std::map<StrViewA,std::string> KeyValueMap;
 
 	KeyValueMap kvmap;
 
 	void parseLine(const std::string &line);
 };
+
+
 
 } /* namespace doxyhub */
 

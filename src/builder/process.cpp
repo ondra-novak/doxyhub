@@ -111,6 +111,14 @@ int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 
 		if (pid == 0) {
 
+			if (!start_dir.empty()) {
+				if (chdir(start_dir.c_str())) {
+					int err = errno;
+					write(status_write,&err,sizeof(err));
+					throw exitExec;
+				}
+			}
+
 			dup2(stdout_write, 1);
 			dup2(stderr_write, 2);
 
@@ -208,44 +216,5 @@ int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 }
 
 
-void ExternalProcessLogToFile::setOutput(std::ostream* stream) {
-	this->stream = stream;
-}
-
-void ExternalProcessLogToFile::onLogOutput(StrViewA line, bool error) {
-	if (stream) {
-		std::vector<char> &buff = error?errline:outline;
-
-		auto nlpos = line.indexOf("\n");
-		decltype(nlpos) i = 0;
-		if (nlpos != line.npos) {
-			while (i < nlpos) {
-				buff.push_back(line[i++]);
-			}
-			(*stream) << (error?"ERR: ":"OUT: ");
-			stream->write(buff.data(),buff.size());
-			buff.clear();
-		}
-		while (i < line.length) {
-			buff.push_back(line[i++]);
-		}
-	}
-	ExternalProcess::onLogOutput(line,error);
-}
-
-int ExternalProcessLogToFile::execute(std::initializer_list<StrViewA> args) {
-	if (stream) {
-		(*stream) << "$ " << pathname;
-		for (auto &&x: args) {
-			(*stream) << " " << x ;
-		}
-		(*stream) << std::endl;
-	}
-	int res = ExternalProcess::execute(args);
-	if (stream) {
-		(*stream) << "EXIT: " << pathname << " " << res;
-	}
-	return res;
-}
-
 } /* namespace doxyhub */
+

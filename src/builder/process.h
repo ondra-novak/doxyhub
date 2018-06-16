@@ -23,28 +23,18 @@ public:
 	virtual ~ExternalProcess() {}
 
 	int execute(std::initializer_list<StrViewA> args);
+	void set_start_dir(std::string &&sd) {start_dir = std::move(sd);}
+	void set_start_dir(const std::string &sd) {start_dir = sd;}
 protected:
 	std::string pathname;
+	std::string start_dir;
 	EnvVars envp;
 	unsigned int activityTimeout;
 	unsigned int totalTimeout;
 };
 
 
-class ExternalProcessLogToFile: public ExternalProcess {
-public:
-	using ExternalProcess::ExternalProcess;
 
-	void setOutput(std::ostream *stream);
-
-	virtual void onLogOutput(StrViewA line, bool error);
-	int execute(std::initializer_list<StrViewA> args);
-
-protected:
-	std::ostream *stream = nullptr;
-	std::vector<char> outline, errline;
-
-};
 
 } /* namespace doxyhub */
 
