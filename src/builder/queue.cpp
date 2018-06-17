@@ -43,14 +43,14 @@ Queue::Queue(Builder &bld, CouchDB &db)
 void Queue::onChange(const ChangedDoc& doc) {
 	try {
 		queueLastID.set("lastId", doc.seqId);
-		//db.put(queueLastID);
+		db.put(queueLastID);
 		Document curDoc(doc.doc);
 		if (curDoc["status"] == "deleted") {
 			bld.deleteDoc(curDoc.getID());
 			curDoc.unset("disksize");
 		} else if (curDoc["status"] == "queued") {
 			curDoc.set("status","building");
-//			put_merge(curDoc);
+			put_merge(curDoc);
 			try {
 				bld.buildDoc(curDoc["url"].getString(),
 						curDoc.getID(), curDoc["build_rev"].getString());
