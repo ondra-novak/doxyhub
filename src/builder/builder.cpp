@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <sstream>
 #include <fstream>
+#include "walk_dir.h"
 
 namespace doxyhub {
 
@@ -25,50 +26,21 @@ Builder::Builder(const Config& cfg, EnvVars envVars):cfg(cfg),envVars(envVars) {
 
 }
 
+static void recursive_erase(std::string path) {
 
-static bool isDots(const char *name) {
-	return name[0] == '.' && ((name[1] == '.' && name[2] == 0)||name[1] == 0);
-}
-
-void myclosedir(DIR *d){
-	closedir(d);
-};
-
-
-void recursive_erase(std::string path) {
-
-	typedef RAII<DIR *, decltype(&myclosedir), &myclosedir> Dir;
-
-	DIR *dirptr = opendir(path.c_str());
-	if (dirptr == nullptr) return;
-
-	Dir dir(dirptr);
-
-
-	const dirent *entry;
-
-	auto pathlen = path.length();
-
-	while ((entry = readdir(dir)) != nullptr) {
-		if (!isDots(entry->d_name)) {
-			path.resize(pathlen);
-			path.push_back('/');
-			path.append(entry->d_name);
-			if (entry->d_type == DT_DIR) {
-				recursive_erase(path);
-				if (rmdir(path.c_str())) {
-					int err = errno;
-					throw SystemException(err,"Cannot erase directory:" + path);
-				}
-			} else {
-				if (unlink(path.c_str())) {
-					int err = errno;
-					throw SystemException(err,"Cannot erase file:" + path);
-				}
-			}
+	WalkDir::walk_directory(path, true,
+			[](const std::string &path, WalkDir::WalkEvent event) {
+		switch (event) {
+		case WalkDir::file_entry: remove(path.c_str());break;
+		case WalkDir::directory_leave:rmdir(path.c_str());break;
+		default:break;
 		}
-	}
+
+		return true;
+	});
+
 }
+
 
 static void makeDir(const std::string &name) {
 	struct stat statBuff;
@@ -129,7 +101,7 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 
 
 	ExternalProcessWithLog doxygen(cfg.doxygen,envVars,cfg.activityTimeout, cfg.totalTimeout);
-	ExternalProcessWithLog git(cfg.doxygen,envVars,cfg.activityTimeout, cfg.totalTimeout);
+	ExternalProcessWithLog git(cfg.git,envVars,cfg.activityTimeout, cfg.totalTimeout);
 
 	std::string curRev = get_git_last_revision(std::move(git), url);
 
@@ -139,7 +111,7 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 	this->warnings.clear();
 	if (curRev == revision) return;
 
-	std::string path = cfg.output + output_name;
+	std::string path = cfg.output +"/"+ output_name;
 
 	recursive_erase(cfg.working);
 	makeDir(cfg.working);
@@ -163,14 +135,14 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 	}
 
 	std::string doxyfile = unpack+"/Doxyfile";
-	std::string adj_doxyfile = adj_doxyfile;
+	std::string adj_doxyfile = doxyfile;
 	if (access(doxyfile.c_str(),0)) {
 		doxyfile = cfg.doxyfile;
 	}
 
-	prepareDoxyfile(doxyfile, adj_doxyfile, build);
+	prepareDoxyfile(doxyfile, adj_doxyfile, "../build");
 
-	res = doxygen.execute({adj_doxyfile});
+	res = doxygen.execute({"Doxyfile"});
 
 	this->log = combineLogs(git.output, doxygen.output);
 	this->warnings = combineLogs(git.error, doxygen.error);
@@ -179,9 +151,21 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 		throw std::runtime_error("Doxygen failed for url: " + url);
 	}
 
+	std::string movedOut;
+	if (access(path.c_str(),0) == 0) {
+		movedOut = path+"_old";
+		if (rename(path.c_str(),movedOut.c_str())) {
+			int err = errno;
+			throw SystemException(err, "Failed to update storage: " + movedOut);
+		}
+	}
 	if (rename(build_html.c_str(), path.c_str())) {
 		int err = errno;
 		throw SystemException(err, "Failed to update storage: " + path);
+	}
+	if (!movedOut.empty()) {
+		recursive_erase(movedOut);
+		rmdir(movedOut.c_str());
 	}
 
 
@@ -192,6 +176,27 @@ static StrViewA extractNameFromURL(StrViewA url) {
 	if (p == url.npos) return url;
 	else return url.substr(p+1);
 
+}
+
+void Builder::deleteDoc(const std::string& output_name) {
+	std::string path = cfg.output +"/" + output_name;
+	recursive_erase(path);
+}
+
+std::size_t Builder::calcSize(const std::string& output_name) {
+	std::string path = cfg.output +"/" + output_name;
+	std::size_t size = 0;
+	WalkDir::walk_directory(path,true,
+			[&size](const std::string &path, WalkDir::WalkEvent ev){
+		if (ev == WalkDir::file_entry) {
+			struct stat st;
+			if (lstat(path.c_str(), &st) == 0) {
+				size += st.st_size;
+			}
+		}
+		return true;
+	});
+	return size;
 }
 
 void Builder::prepareDoxyfile(const std::string& source,const std::string& target, const std::string &buildPath) {

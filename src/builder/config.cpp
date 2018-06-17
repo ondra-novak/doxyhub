@@ -38,7 +38,7 @@ void Config::parse(const std::string& name) {
 	dbconfig.baseUrl = database.mandatory["url"].getString();
 	dbconfig.databaseName = database.mandatory["dbname"].getString();
 
-	const IniConfig::KeyValueMap &generate = cfg["database"];
+	const IniConfig::KeyValueMap &generate = cfg["generate"];
 	output = generate.mandatory["output"].getPath();
 	working= generate.mandatory["working"].getPath();
 	doxyfile = generate.mandatory["doxyfile"].getPath();

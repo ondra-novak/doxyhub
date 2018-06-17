@@ -17,7 +17,7 @@ using ondra_shared::StringView;
 
 namespace doxyhub {
 
-static StringView<StrViewA> supportedOptions = {
+static StrViewA supportedOptions[] = {
 		//KEEP ORDERED!!
 		"ABBREVIATE_BRIEF",
 		"ALIASES",
@@ -144,6 +144,7 @@ static StringView<StrViewA> supportedOptions = {
 		"PROJECT_NAME",
 		"PROJECT_NUMBER",
 		"QT_AUTOBRIEF",
+		"RECURSIVE",
 		"REFERENCED_BY_RELATION",
 		"REFERENCES_LINK_SOURCE",
 		"REFERENCES_RELATION",
@@ -190,7 +191,7 @@ static StringView<StrViewA> supportedOptions = {
 		"WARN_NO_PARAMDOC",
 };
 
-static StringView<StrViewA> optionsWithPath = {
+static StrViewA optionsWithPath[] = {
 		"CITE_BIB_FILES",
 		"EXAMPLE_PATH",
 		"IMAGE_PATH",
@@ -212,7 +213,7 @@ static StringView<StrViewA> optionsWithPath = {
 };
 
 
-static StringView<std::pair<StrViewA,StrViewA> > predefinedOptions = {
+static std::pair<StrViewA,StrViewA>  predefinedOptions[] = {
 		{"CREATE_SUBDIRS","NO"},
 		{"ALLOW_UNICODE_NAMES","NO"},
 		{"FULL_PATH_NAMES","NO"},
@@ -404,13 +405,13 @@ void Doxyfile::parseLine(const std::string& line) {
 		auto epos = sl.indexOf("=");
 		if (epos != sl.npos) {
 			append = false;
-			key = sl.substr(0,apos).trim(isspace);
-			value = sl.substr(apos+1).trim(isspace);
+			key = sl.substr(0,epos).trim(isspace);
+			value = sl.substr(epos+1).trim(isspace);
 		}
 	}
 
-	auto itr = std::lower_bound(supportedOptions.begin(), supportedOptions.end(), key);
-	if (itr != supportedOptions.end() && *itr == key) {
+	auto itr = std::lower_bound(std::begin(supportedOptions), std::end(supportedOptions), key);
+	if (itr != std::end(supportedOptions) && *itr == key) {
 
 		key = *itr;
 

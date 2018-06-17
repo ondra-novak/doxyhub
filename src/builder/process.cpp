@@ -123,12 +123,15 @@ int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 			dup2(stderr_write, 2);
 
 			auto listsize = args.size();
-			char **arglist = new char *[listsize+1];
-			arglist[listsize] = nullptr;
+			char **arglist = new char *[listsize+2];
+			arglist[listsize+1] = nullptr;
+			int x = 0;
+			arglist[x++] = const_cast<char *>(pathname.c_str());
 			for (auto &&v : args) {
 				char *c = new char[v.length+1];
 				std::memcpy(c, v.data, v.length);
 				c[v.length] = 0;
+				arglist[x++] = c;
 			}
 
 			execve(pathname.c_str(), arglist, envp);
@@ -147,20 +150,20 @@ int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 			status_read.close();
 
 			if (x)
-				throw SystemException(err, "exec failed");
+				throw SystemException(err, "exec failed: " + pathname);
 
 
 			time_t start;
 			time(&start);
 
 
-			int count = 3;
+			int count = 2;
 			struct pollfd pnfo[2];
 			pnfo[0].fd = stdout_read;
-			pnfo[0].events = POLL_IN|POLL_HUP|POLL_ERR;
+			pnfo[0].events = POLLIN|POLLHUP|POLLERR;
 			pnfo[0].revents = 0;
 			pnfo[1] = pnfo[0];
-			pnfo[1].fd = stdout_write;
+			pnfo[1].fd = stderr_read;
 
 			do {
 
@@ -183,9 +186,10 @@ int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 				}
 
 				char buff[256];
-				for (auto &&pf : pnfo) {
+				for (int i = 0; i < count; i++) {
+					pollfd &pf = pnfo[i];
 					bool erase = false;
-					if (pf.revents & POLL_IN) {
+					if (pf.revents & POLLIN) {
 						int k = read(pf.fd,buff,256);
 						if (k <= 0) {
 							erase = true;
@@ -194,7 +198,7 @@ int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 							onLogOutput(data, pf.fd == stderr_read);
 						}
 
-					} else if (pf.revents & (POLL_ERR | POLL_HUP)) {
+					} else if (pf.revents & (POLLERR | POLLHUP)) {
 								erase = true;
 					}
 					pf.revents = 0;

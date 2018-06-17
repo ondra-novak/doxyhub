@@ -42,3 +42,7 @@ Makefile
 
 #eclipse
 .settings
+
+/www
+/tmp
+/instance
