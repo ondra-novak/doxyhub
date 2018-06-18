@@ -14,11 +14,14 @@
 namespace doxyhub {
 
 using ondra_shared::logError;
+using ondra_shared::logProgress;
 using ondra_shared::WaitableEvent;
+using ondra_shared::AbstractLogProviderFactory;
+
 
 static StrViewA filterFn = R"javascript(
-function(doc) {
-	return doc.url && (doc.status == "queued" || doc.status == "delete");
+function(doc,req) {
+	return doc.url && (doc.status == "queued" || doc.status == "delete") && doc.queue == req.query.queueid;
 }
 
 )javascript";
@@ -28,7 +31,7 @@ static Value queueDesignDoc = Object("_id","_design/queue")
 		("filters", Object("queue", filterFn));
 
 
-Queue::Queue(Builder &bld, CouchDB &db)
+Queue::Queue(Builder &bld, CouchDB &db, const std::string &queueId)
 	:bld(bld)
 	,db(db)
 	,distr(db.createChangesFeed())
@@ -43,6 +46,7 @@ Queue::Queue(Builder &bld, CouchDB &db)
 		distr.add(*this);
 		distr.includeDocs();
 		distr.setFilter(Filter("queue/queue"));
+		distr.arg("queueid",queueId);
 }
 
 Queue::~Queue() {
@@ -52,6 +56,10 @@ Queue::~Queue() {
 
 void Queue::onChange(const ChangedDoc& doc) {
 	buildWorker >> [doc = ChangedDoc(doc),this] {
+
+		AbstractLogProviderFactory *logProvider = AbstractLogProviderFactory::getInstance();
+		if (logProvider) logProvider->reopenLogs();
+
 		if (exitPhase) return;
 		processChange(doc);
 	};
@@ -62,6 +70,9 @@ void Queue::processChange(const ChangedDoc &doc) {
 			queueLastID.set("lastId", doc.seqId);
 			db.put(queueLastID);
 			Document curDoc(doc.doc);
+			logProgress("Build started: doc=$1, url=$2, status=$3",
+					curDoc.getID(),curDoc["url"].getString(),curDoc["status"].getString()
+			);
 			auto startTime = std::chrono::system_clock::now();
 
 			if (curDoc["status"] == "delete") {
@@ -99,11 +110,16 @@ void Queue::processChange(const ChangedDoc &doc) {
 				curDoc.inlineAttachment("stderr",AttachmentDataRef(
 						BinaryView(StrViewA(bld.warnings)),"text/plain"
 				));
+				auto endTime = std::chrono::system_clock::now();
+				curDoc.object("build_time")
+						.set("end",(std::size_t)std::chrono::system_clock::to_time_t(endTime))
+						.set("duration",std::chrono::duration_cast<std::chrono::seconds>(endTime-startTime).count());
 			}
-			auto endTime = std::chrono::system_clock::now();
-			curDoc.object("build_time")
-					.set("end",(std::size_t)std::chrono::system_clock::to_time_t(endTime))
-					.set("duration",std::chrono::duration_cast<std::chrono::seconds>(endTime-startTime).count());
+
+			logProgress("Build finished : doc=$1, url=$2, status=$3",
+					curDoc.getID(),curDoc["url"].getString(),curDoc["status"].getString()
+			);
+
 
 			put_merge(curDoc);
 
@@ -120,11 +136,12 @@ void Queue::run() {
 			try {
 				throw;
 			} catch (std::exception &e) {
-				logError("Database queue monitoring failure %1", e.what());
+				logError("Database queue monitoring failure $1", e.what());
 			}
 			std::this_thread::sleep_for(std::chrono::seconds(2));
 			return true;
 		});
+	logProgress("queue started");
 }
 
 void Queue::stop() {
@@ -139,6 +156,7 @@ void Queue::stop() {
 		bld.stopTools();
 	}
 
+	logProgress("queue stopped");
 }
 
 void Queue::put_merge(Document &doc) {

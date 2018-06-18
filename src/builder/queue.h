@@ -23,7 +23,7 @@ using namespace couchit;
 
 class Queue: public couchit::IChangeObserver {
 public:
-	Queue(Builder &bld, CouchDB &db);
+	Queue(Builder &bld, CouchDB &db, const std::string &queueId);
 	~Queue();
 
 	virtual void onChange(const ChangedDoc &doc);

@@ -25,6 +25,10 @@ public:
 	std::string output;
 	std::string working;
 	std::string doxyfile;
+	std::string queueId;
+
+	std::string logfile;
+	std::string loglevel;
 
 	int activityTimeout;
 	int totalTimeout;
