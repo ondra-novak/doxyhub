@@ -42,6 +42,8 @@ protected:
 	bool exitPhase;
 
 	void put_merge(Document &doc);
+
+	void processChange(const ChangedDoc &doc);
 };
 
 } /* namespace doxyhub */

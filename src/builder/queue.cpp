@@ -40,7 +40,7 @@ Queue::Queue(Builder &bld, CouchDB &db)
 		if (!queueLastID["lastId"].defined()) {
 			queueLastID.set("lastId",nullptr);
 		}
-		distr.add(this,false);
+		distr.add(*this);
 		distr.includeDocs();
 		distr.setFilter(Filter("queue/queue"));
 }
@@ -49,22 +49,33 @@ Queue::~Queue() {
 
 }
 
+
 void Queue::onChange(const ChangedDoc& doc) {
 	buildWorker >> [doc = ChangedDoc(doc),this] {
 		if (exitPhase) return;
+		processChange(doc);
+	};
+}
+
+void Queue::processChange(const ChangedDoc &doc) {
 		try {
 			queueLastID.set("lastId", doc.seqId);
 			db.put(queueLastID);
 			Document curDoc(doc.doc);
+			auto startTime = std::chrono::system_clock::now();
+
 			if (curDoc["status"] == "delete") {
 				bld.deleteDoc(curDoc.getID());
 				curDoc.unset("disksize");
 				curDoc.unset("build_rev");
 				curDoc.unset("error");
+				curDoc.deleteAttachment("stdout");
+				curDoc.deleteAttachment("stderr");
 				curDoc.set("status","deleted");
 			} else if (curDoc["status"] == "queued") {
 				curDoc.set("status","building");
 				curDoc.unset("error");
+				curDoc.object("build_time").set("start",(std::size_t)std::chrono::system_clock::to_time_t(startTime));
 				put_merge(curDoc);
 				try {
 					bld.buildDoc(curDoc["url"].getString(),
@@ -89,12 +100,16 @@ void Queue::onChange(const ChangedDoc& doc) {
 						BinaryView(StrViewA(bld.warnings)),"text/plain"
 				));
 			}
+			auto endTime = std::chrono::system_clock::now();
+			curDoc.object("build_time")
+					.set("end",(std::size_t)std::chrono::system_clock::to_time_t(endTime))
+					.set("duration",std::chrono::duration_cast<std::chrono::seconds>(endTime-startTime).count());
+
 			put_merge(curDoc);
 
 		} catch (std::exception &e) {
 			logError("Building exception $1", e.what());
 		}
-	};
 }
 
 void Queue::run() {
