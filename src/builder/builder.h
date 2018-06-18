@@ -8,11 +8,15 @@
 #ifndef SRC_BUILDER_BUILDER_H_
 #define SRC_BUILDER_BUILDER_H_
 
+#include <shared/worker.h>
 #include "config.h"
 #include "process.h"
+#include "active.h"
+
 
 namespace doxyhub {
 
+class ExternalProcessWithLog;
 
 class Builder {
 public:
@@ -22,15 +26,23 @@ public:
 	void deleteDoc(const std::string &output_name);
 	std::size_t calcSize(const std::string &output_name);
 
-	void prepareDoxyfile(const std::string &source, const std::string &target, const std::string &buildPath);
+	void prepareDoxyfile(const std::string &source, const std::string &target, const std::string &buildPath, const std::string &url);
 
 	std::string log;
 	std::string warnings;
 	std::string revision;
 
+
+	void stopTools();
+
 protected:
 	Config cfg;
 	EnvVars envVars;
+	ActiveObject<ExternalProcess> activeTool;
+	typedef ActiveObject<ExternalProcess>::Guard AGuard;
+
+	std::string get_git_last_revision(ExternalProcessWithLog &&git, const std::string &url);
+
 };
 
 } /* namespace doxyhub */

@@ -7,15 +7,18 @@
 
 #include <builder/queue.h>
 #include <shared/logOutput.h>
+#include <shared/waitableEvent.h>
 #include <thread>
+
 
 namespace doxyhub {
 
 using ondra_shared::logError;
+using ondra_shared::WaitableEvent;
 
 static StrViewA filterFn = R"javascript(
 function(doc) {
-	return doc.url && (doc.status == "queued" || doc.status == "deleted");
+	return doc.url && (doc.status == "queued" || doc.status == "delete");
 }
 
 )javascript";
@@ -31,6 +34,8 @@ Queue::Queue(Builder &bld, CouchDB &db)
 	,distr(db.createChangesFeed())
 	,queueLastID(db.getLocal("queueLastID", CouchDB::flgCreateNew))
 {
+	exitPhase = false;
+
 		db.putDesignDocument(queueDesignDoc);
 		if (!queueLastID["lastId"].defined()) {
 			queueLastID.set("lastId",nullptr);
@@ -40,44 +45,63 @@ Queue::Queue(Builder &bld, CouchDB &db)
 		distr.setFilter(Filter("queue/queue"));
 }
 
-void Queue::onChange(const ChangedDoc& doc) {
-	try {
-		queueLastID.set("lastId", doc.seqId);
-		db.put(queueLastID);
-		Document curDoc(doc.doc);
-		if (curDoc["status"] == "deleted") {
-			bld.deleteDoc(curDoc.getID());
-			curDoc.unset("disksize");
-		} else if (curDoc["status"] == "queued") {
-			curDoc.set("status","building");
-			put_merge(curDoc);
-			try {
-				bld.buildDoc(curDoc["url"].getString(),
-						curDoc.getID(), curDoc["build_rev"].getString());
-				curDoc.set("disksize", bld.calcSize(curDoc.getID()));
-				curDoc.set("status","done");
-				curDoc.set("build_rev", StrViewA(bld.revision));
-				put_merge(curDoc);
-			} catch (std::exception &e) {
-				curDoc.set("status","error")
-						  ("error",e.what());
-			}
-			curDoc.inlineAttachment("stdout",AttachmentDataRef(
-					BinaryView(StrViewA(bld.log)),"text/plain"
-			));
-			curDoc.inlineAttachment("stderr",AttachmentDataRef(
-					BinaryView(StrViewA(bld.warnings)),"text/plain"
-			));
-		}
-		put_merge(curDoc);
+Queue::~Queue() {
 
-	} catch (std::exception &e) {
-		logError("Building exception $1", e.what());
-	}
+}
+
+void Queue::onChange(const ChangedDoc& doc) {
+	buildWorker >> [doc = ChangedDoc(doc),this] {
+		if (exitPhase) return;
+		try {
+			queueLastID.set("lastId", doc.seqId);
+			db.put(queueLastID);
+			Document curDoc(doc.doc);
+			if (curDoc["status"] == "delete") {
+				bld.deleteDoc(curDoc.getID());
+				curDoc.unset("disksize");
+				curDoc.unset("build_rev");
+				curDoc.unset("error");
+				curDoc.set("status","deleted");
+			} else if (curDoc["status"] == "queued") {
+				curDoc.set("status","building");
+				curDoc.unset("error");
+				put_merge(curDoc);
+				try {
+					bld.buildDoc(curDoc["url"].getString(),
+							curDoc.getID(), curDoc["build_rev"].getString());
+					curDoc.set("disksize", bld.calcSize(curDoc.getID()));
+					curDoc.set("status","done");
+					curDoc.unset("error");
+					curDoc.set("build_rev", StrViewA(bld.revision));
+					put_merge(curDoc);
+				} catch (std::exception &e) {
+					if (exitPhase) {
+						curDoc.set("status","queued");
+					} else {
+						curDoc.set("status","error")
+								  ("error",e.what());
+					}
+				}
+				curDoc.inlineAttachment("stdout",AttachmentDataRef(
+						BinaryView(StrViewA(bld.log)),"text/plain"
+				));
+				curDoc.inlineAttachment("stderr",AttachmentDataRef(
+						BinaryView(StrViewA(bld.warnings)),"text/plain"
+				));
+			}
+			put_merge(curDoc);
+
+		} catch (std::exception &e) {
+			logError("Building exception $1", e.what());
+		}
+	};
 }
 
 void Queue::run() {
-		distr.runService([=]{
+	exitPhase = false;
+	buildWorker = Worker::create(1);
+
+	distr.runService([=]{
 			try {
 				throw;
 			} catch (std::exception &e) {
@@ -90,6 +114,16 @@ void Queue::run() {
 
 void Queue::stop() {
 	distr.stopService();
+	exitPhase = true;
+	WaitableEvent ev;
+	bld.stopTools();
+	buildWorker >> [&]{
+		ev.signal();
+	};
+	while (!ev.wait_for(std::chrono::seconds(1))) {
+		bld.stopTools();
+	}
+
 }
 
 void Queue::put_merge(Document &doc) {

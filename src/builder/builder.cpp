@@ -23,7 +23,6 @@ using ondra_shared::RAII;
 using ondra_shared::StrViewA;
 
 Builder::Builder(const Config& cfg, EnvVars envVars):cfg(cfg),envVars(envVars) {
-
 }
 
 static void recursive_erase(std::string path) {
@@ -78,7 +77,8 @@ public:
 };
 
 
-std::string get_git_last_revision(ExternalProcessWithLog &&git, const std::string &url) {
+std::string Builder::get_git_last_revision(ExternalProcessWithLog &&git, const std::string &url) {
+	AGuard _(activeTool, &git);
 	int res = git.execute({"ls-remote", url});
 	if (res != 0) throw std::runtime_error("GIT:Cannot retrive last revision for url: " + url);
 	std::string rev;
@@ -103,6 +103,7 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 	ExternalProcessWithLog doxygen(cfg.doxygen,envVars,cfg.activityTimeout, cfg.totalTimeout);
 	ExternalProcessWithLog git(cfg.git,envVars,cfg.activityTimeout, cfg.totalTimeout);
 
+
 	std::string curRev = get_git_last_revision(std::move(git), url);
 
 
@@ -126,8 +127,12 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 	git.set_start_dir(unpack);
 	doxygen.set_start_dir(unpack);
 
+	int res;
 
-	int res = git.execute({"clone","--progress","--depth","1",url,"."});;
+	{
+		AGuard _(activeTool, &git);
+		res = git.execute({"clone","--progress","--depth","1",url,"."});;
+	}
 	if (res != 0) {
 		this->log = git.output.str();
 		this->warnings = git.error.str();
@@ -135,14 +140,17 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 	}
 
 	std::string doxyfile = unpack+"/Doxyfile";
-	std::string adj_doxyfile = doxyfile;
+	std::string adj_doxyfile = doxyfile+".doxyhub.1316048469";
 	if (access(doxyfile.c_str(),0)) {
 		doxyfile = cfg.doxyfile;
 	}
 
-	prepareDoxyfile(doxyfile, adj_doxyfile, "../build");
+	prepareDoxyfile(doxyfile, adj_doxyfile, "../build",url);
 
-	res = doxygen.execute({"Doxyfile"});
+	{
+		AGuard _(activeTool, &doxygen);
+		res = doxygen.execute({"Doxyfile.doxyhub.1316048469"});
+	}
 
 	this->log = combineLogs(git.output, doxygen.output);
 	this->warnings = combineLogs(git.error, doxygen.error);
@@ -199,7 +207,7 @@ std::size_t Builder::calcSize(const std::string& output_name) {
 	return size;
 }
 
-void Builder::prepareDoxyfile(const std::string& source,const std::string& target, const std::string &buildPath) {
+void Builder::prepareDoxyfile(const std::string& source,const std::string& target, const std::string &buildPath, const std::string &url) {
 
 	Doxyfile df;
 	{
@@ -214,7 +222,7 @@ void Builder::prepareDoxyfile(const std::string& source,const std::string& targe
 	}
 
 
-	StrViewA name = extractNameFromURL(source);
+	StrViewA name = extractNameFromURL(url);
 	df.sanitize(buildPath, name, revision);
 
 	{
@@ -228,6 +236,13 @@ void Builder::prepareDoxyfile(const std::string& source,const std::string& targe
 
 	}
 }
+
+void Builder::stopTools() {
+	activeTool.lock([](ExternalProcess &proc){
+		proc.terminate();
+	});
+}
+
 
 } /* namespace doxyhub */
 

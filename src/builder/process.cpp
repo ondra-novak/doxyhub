@@ -17,10 +17,12 @@
 #include <thread>
 #include <ctime>
 #include <memory>
+#include <shared/raii.h>
 
 namespace doxyhub {
 
 using simpleServer::SystemException;
+using ondra_shared::RAII;
 
 
 ExternalProcess::ExternalProcess(std::string pathname, EnvVars envp, unsigned int activityTimeout, unsigned int totalTimeout)
@@ -88,6 +90,12 @@ static int waitForPidTimeout(pid_t pid) {
 
 }
 
+namespace {
+	void setZero(pid_t *v) {
+		*v = 0;
+	}
+}
+
 int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 
 	try {
@@ -96,13 +104,16 @@ int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 		Fd status_read, status_write;
 
 		int err;
-		pid_t pid;
 
 		create_pipe(stdout_read, stdout_write);
 		create_pipe(stderr_read, stderr_write);
 		create_pipe(status_read, status_write);
 
+		RAII<int *, decltype(&setZero),&setZero> pidptr(&pid);
+
 		pid = fork();
+
+
 		if (pid == -1) {
 			err = errno;
 			throw SystemException(err, "fork failed");
@@ -220,5 +231,10 @@ int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 }
 
 
-} /* namespace doxyhub */
+void ExternalProcess::terminate() {
+	pid_t p = pid;
+	if (p) kill(p, SIGTERM);
+}
 
+
+} /* namespace doxyhub */

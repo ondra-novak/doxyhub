@@ -25,10 +25,12 @@ public:
 	int execute(std::initializer_list<StrViewA> args);
 	void set_start_dir(std::string &&sd) {start_dir = std::move(sd);}
 	void set_start_dir(const std::string &sd) {start_dir = sd;}
+	void terminate();
 protected:
 	std::string pathname;
 	std::string start_dir;
 	EnvVars envp;
+	pid_t pid;
 	unsigned int activityTimeout;
 	unsigned int totalTimeout;
 };

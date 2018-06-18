@@ -13,15 +13,18 @@
 #include <couchit/changes.h>
 #include <couchit/couchDB.h>
 #include <couchit/document.h>
+#include <shared/worker.h>
 
 namespace doxyhub {
+
+using ondra_shared::Worker;
 
 using namespace couchit;
 
 class Queue: public couchit::IChangeObserver {
 public:
 	Queue(Builder &bld, CouchDB &db);
-
+	~Queue();
 
 	virtual void onChange(const ChangedDoc &doc);
 
@@ -35,6 +38,8 @@ protected:
 	CouchDB &db;
 	ChangesDistributor distr;
 	Document queueLastID;
+	Worker buildWorker;
+	bool exitPhase;
 
 	void put_merge(Document &doc);
 };

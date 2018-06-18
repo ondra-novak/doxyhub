@@ -19,6 +19,7 @@ namespace doxyhub {
 
 static StrViewA supportedOptions[] = {
 		//KEEP ORDERED!!
+
 		"ABBREVIATE_BRIEF",
 		"ALIASES",
 		"ALLEXTERNALS",
@@ -61,7 +62,6 @@ static StrViewA supportedOptions[] = {
 		"EXTERNAL_PAGES",
 		"EXTERNAL_SEARCH",
 		"EXTERNAL_SEARCH_ID",
-		"EXT_LINKS_IN_WINDOW",
 		"EXTRACT_ALL",
 		"EXTRACT_ANON_NSPACES",
 		"EXTRACT_LOCAL_CLASSES",
@@ -70,6 +70,7 @@ static StrViewA supportedOptions[] = {
 		"EXTRACT_PRIVATE",
 		"EXTRACT_STATIC",
 		"EXTRA_SEARCH_MAPPINGS",
+		"EXT_LINKS_IN_WINDOW",
 		"FORCE_LOCAL_INCLUDES",
 		"FORMULA_FONTSIZE",
 		"FORMULA_TRANSPARENT",
@@ -164,8 +165,8 @@ static StrViewA supportedOptions[] = {
 		"SORT_BRIEF_DOCS",
 		"SORT_BY_SCOPE_NAME",
 		"SORT_GROUP_NAMES",
-		"SORT_MEMBER_DOCS",
 		"SORT_MEMBERS_CTORS_1ST",
+		"SORT_MEMBER_DOCS",
 		"SOURCE_BROWSER",
 		"SOURCE_TOOLTIPS",
 		"STRICT_PROTO_MATCHING",
@@ -189,6 +190,7 @@ static StrViewA supportedOptions[] = {
 		"WARN_IF_DOC_ERROR",
 		"WARN_IF_UNDOCUMENTED",
 		"WARN_NO_PARAMDOC",
+
 };
 
 static StrViewA optionsWithPath[] = {
@@ -217,7 +219,7 @@ static std::pair<StrViewA,StrViewA>  predefinedOptions[] = {
 		{"CREATE_SUBDIRS","NO"},
 		{"ALLOW_UNICODE_NAMES","NO"},
 		{"FULL_PATH_NAMES","NO"},
-		{"SHORT_NAMES","YES"},
+		{"SHORT_NAMES","NO"},
 		{"LOOKUP_CACHE_SIZE","4"},
 		{"QUIET","NO"},
 		{"WARNINGS","YES"},
@@ -293,7 +295,7 @@ static std::string rebuildPath(StrViewA srcPath) {
 		}
 	}
 
-	if (!tmp.empty()) tmp.erase(0);
+	if (!tmp.empty()) tmp.erase(0,1);
 	return tmp;
 
 }
