@@ -22,24 +22,6 @@ using ondra_shared::LogLevel;
 using ondra_shared::logProgress;
 using ondra_shared::PStdLogProviderFactory;
 
-void enableLog(doxyhub::Config cfg, ondra_shared::StrViewA name) {
-	LogLevelToStrTable logleveltable;
-	auto logLevel = logleveltable.fromString(cfg.loglevel, LogLevel::debug);
-
-	PStdLogProviderFactory logFactory;
-
-	if (!cfg.logfile.empty()) {
-		logFactory = new StdLogFile(cfg.logfile, logLevel);
-	} else {
-		logFactory = new StdLogProviderFactory(logLevel);
-	}
-	logFactory->setDefault();
-
-	logProgress("----------------- DOCBUILDER ----------------------------");
-	logProgress("logfile=$1, loglevel=$2", cfg.logfile,
-			logleveltable.toString(logLevel));
-	logProgress("Service $1 started", name);
-}
 
 int main(int argc, char **argv, char **envp) {
 	using namespace doxyhub;
@@ -50,7 +32,7 @@ int main(int argc, char **argv, char **envp) {
 	return
 
 	ServiceControl::create(argc, argv, "doxyhub builder",
-			[=](ServiceControl control, StrViewA name, ArgList args){
+			[=](ServiceControl control, StrViewA , ArgList args){
 
 		if (args.length < 1) {
 			throw std::runtime_error("You need to supply a pathname of configuration");
@@ -67,7 +49,8 @@ int main(int argc, char **argv, char **envp) {
 		doxyhub::Config cfg;
 		cfg.parse(StrViewA(cfgpath));
 
-				enableLog(cfg, name);
+		StdLogFile::create(cfg.logfile, cfg.loglevel, LogLevel::debug)->setDefault();
+
 		control.enableRestart();
 
 
@@ -81,7 +64,6 @@ int main(int argc, char **argv, char **envp) {
 		control.dispatch();
 		q.stop();
 
-		logProgress("----------------- EXIT ----------------------------");
 
 		return 0;
 	});
