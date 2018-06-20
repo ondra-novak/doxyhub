@@ -12,8 +12,10 @@
 #include <shared/raii.h>
 #include <simpleServer/exceptions.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <sstream>
 #include <fstream>
+#include <fcntl.h>
 #include "walk_dir.h"
 
 namespace doxyhub {
@@ -97,6 +99,60 @@ static std::string combineLogs(std::ostringstream &git, std::ostringstream &doxy
 	return tmp.str();
 }
 
+static bool copy_file_only(const std::string &src, const std::string &trg) {
+
+	typedef RAII<int, decltype(&close), &close> FD;
+	FD srcfd = ::open(src.c_str(), O_RDONLY|O_CLOEXEC|O_NOFOLLOW);
+	if (srcfd == -1) return false;
+	FD trgfd = ::open(trg.c_str(), O_WRONLY|O_CLOEXEC|O_EXCL|O_CREAT, 0666);
+	if (trgfd == -1) return false;
+	unsigned char buffer[65536];
+	auto i = ::read(srcfd, buffer,sizeof(buffer));
+	while (i > 0) {
+		::write(trgfd, buffer,i);
+		i = ::read(srcfd, buffer,sizeof(buffer));
+	}
+	return true;
+}
+
+static void recursive_move(const std::string &source, const std::string& target) {
+
+	WalkDir::walk_directory(source, true, [&](const std::string &path, WalkDir::WalkEvent event) {
+
+		std::string targetPath = target+path.substr(source.length());
+		switch (event) {
+			case WalkDir::WalkEvent::directory_enter: makeDir(targetPath);break;
+			case WalkDir::WalkEvent::file_entry: copy_file_only(path, targetPath);
+							unlink(path.c_str());
+							break;
+			case WalkDir::WalkEvent::directory_leave:
+							rmdir(path.c_str());
+							break;
+		}
+
+		return true;
+	});
+}
+
+static void fast_replace(const std::string& src_path, const std::string& target_path) {
+	std::string movedOut;
+	if (access(target_path.c_str(), 0) == 0) {
+		movedOut = target_path + "_old";
+		if (rename(target_path.c_str(), movedOut.c_str())) {
+			int err = errno;
+			throw SystemException(err, "Failed to update storage: " + movedOut);
+		}
+	}
+	if (rename(src_path.c_str(), target_path.c_str())) {
+		int err = errno;
+		throw SystemException(err, "Failed to update storage: " + target_path);
+	}
+	if (!movedOut.empty()) {
+		recursive_erase(movedOut);
+		rmdir(movedOut.c_str());
+	}
+}
+
 void Builder::buildDoc(const std::string& url, const std::string& output_name, const std::string &revision) {
 
 
@@ -113,6 +169,7 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 	if (curRev == revision) return;
 
 	std::string path = cfg.output +"/"+ output_name;
+	std::string newpath = path+"_new";
 
 	recursive_erase(cfg.working);
 	makeDir(cfg.working);
@@ -159,24 +216,10 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 		throw std::runtime_error("Doxygen failed for url: " + url);
 	}
 
-	std::string movedOut;
-	if (access(path.c_str(),0) == 0) {
-		movedOut = path+"_old";
-		if (rename(path.c_str(),movedOut.c_str())) {
-			int err = errno;
-			throw SystemException(err, "Failed to update storage: " + movedOut);
-		}
-	}
-	if (rename(build_html.c_str(), path.c_str())) {
-		int err = errno;
-		throw SystemException(err, "Failed to update storage: " + path);
-	}
-	if (!movedOut.empty()) {
-		recursive_erase(movedOut);
-		rmdir(movedOut.c_str());
-	}
-
-
+	makeDir(newpath);
+	recursive_erase(newpath);
+	recursive_move(build_html, newpath);
+	fast_replace(newpath,path);
 }
 
 static StrViewA extractNameFromURL(StrViewA url) {
