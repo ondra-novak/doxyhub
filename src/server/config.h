@@ -22,6 +22,10 @@ public:
 	std::string logfile;
 	std::string loglevel;
 
+	int server_threads;
+	int server_dispatchers;
+	std::string bind;
+
 	void parse(const std::string &name);
 
 protected:

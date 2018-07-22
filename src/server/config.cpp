@@ -42,6 +42,11 @@ void ServerConfig::parse(const std::string& name) {
 	logfile = log.mandatory["file"].getPath();
 	loglevel = log.mandatory["level"].getString();
 
+	const IniConfig::KeyValueMap &server = cfg["server"];
+	bind = server.mandatory["listen"].getString();
+	server_threads = server.mandatory["threads"].getUInt();
+	server_dispatchers = server.mandatory["dispatchers"].getUInt();
+
 }
 
 
