@@ -12,6 +12,7 @@
 #include <couchit/document.h>
 #include <couchit/couchDB.h>
 #include <couchit/query.h>
+#include <couchit/query.tcc>
 
 
 
@@ -143,7 +144,7 @@ Value BldControl::selectQueue() {
 	std::intptr_t maxAvail = 0;
 	Value bestQueue;
 	for (Row rw: res) {
-		logDebug("Queue stats: $1 = $2", rw.key, rw.value.toString());
+		logDebug("Queue stats: $1 = $2", rw.key.toString(), rw.value.toString());
 		auto avail = rw.value["avail"].getInt();
 		if (avail > maxAvail) {
 			bestQueue = rw.key;
