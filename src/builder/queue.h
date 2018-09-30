@@ -26,7 +26,7 @@ public:
 	Queue(Builder &bld, CouchDB &db, const std::string &queueId);
 	~Queue();
 
-	virtual void onChange(const ChangedDoc &doc);
+	virtual void onChange(const ChangeEvent &doc);
 
 	virtual Value getLastKnownSeqID() const;
 
@@ -43,7 +43,7 @@ protected:
 
 	void put_merge(Document &doc);
 
-	void processChange(const ChangedDoc &doc);
+	void processChange(const ChangeEvent &doc);
 };
 
 } /* namespace doxyhub */

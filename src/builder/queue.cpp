@@ -54,8 +54,8 @@ Queue::~Queue() {
 }
 
 
-void Queue::onChange(const ChangedDoc& doc) {
-	buildWorker >> [doc = ChangedDoc(doc),this] {
+void Queue::onChange(const ChangeEvent& doc) {
+	buildWorker >> [doc = ChangeEvent(doc),this] {
 
 		AbstractLogProviderFactory *logProvider = AbstractLogProviderFactory::getInstance();
 		if (logProvider) logProvider->reopenLogs();
@@ -65,7 +65,7 @@ void Queue::onChange(const ChangedDoc& doc) {
 	};
 }
 
-void Queue::processChange(const ChangedDoc &doc) {
+void Queue::processChange(const ChangeEvent &doc) {
 		try {
 			queueLastID.set("lastId", doc.seqId);
 			db.put(queueLastID);
