@@ -36,6 +36,7 @@ void BldControl::init(RpcServer& rpc) {
 	rpc.add("build",this,&BldControl::buildProject);
 	rpc.add("status",this,&BldControl::statusProject);
 	rpc.add("buildReport",this,&BldControl::projectBuildReport);
+	rpc.add("queueStatus",this,&BldControl::queueStatus);
 
 }
 
@@ -127,6 +128,13 @@ void BldControl::statusProject(json::RpcRequest req) {
 							("url",doc["url"])
 							);
 	}
+}
+
+void BldControl::queueStatus(json::RpcRequest req) {
+	if (!req.checkArgs(json::array)) return req.setArgError();
+
+
+
 }
 
 Value BldControl::selectQueue() {

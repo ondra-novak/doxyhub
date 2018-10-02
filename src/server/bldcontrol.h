@@ -25,6 +25,7 @@ public:
 	void buildProject(json::RpcRequest req);
 	void statusProject(json::RpcRequest req);
 	void projectBuildReport(json::RpcRequest req);
+	void queueStatus(json::RpcRequest req);
 
 protected:
 	couchit::CouchDB &blddb;

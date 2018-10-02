@@ -15,6 +15,7 @@ add_subdirectory (src/imtjson/src/imtjson EXCLUDE_FROM_ALL)
 add_subdirectory (src/couchit/src/couchit EXCLUDE_FROM_ALL)
 add_subdirectory (src/simpleServer/src/simpleServer  EXCLUDE_FROM_ALL)
 add_subdirectory (src/simpleServer/src/rpc EXCLUDE_FROM_ALL)
+add_subdirectory (src/zwebpak)
 add_subdirectory (src/builder)
 add_subdirectory (src/server) 
  
