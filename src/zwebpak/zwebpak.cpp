@@ -249,4 +249,93 @@ bool PakFile::is_valid() const {
 	return !(!f);
 }
 
+
+PakManager::PakManager(const std::string& rootPath, unsigned int pakCacheCnt,unsigned int clusterCacheCnt)
+	:rootPath(rootPath)
+	,pakCacheCnt(pakCacheCnt)
+	,clusterCacheCnt(clusterCacheCnt)
+{
+
+
+
 }
+
+PakManager::Data PakManager::load(const std::string& pakName, const StrViewA& fname) {
+
+	auto i1 = pakMap.find(pakName);
+	if (i1 == pakMap.end()) i1 = loadPak(pakName);
+	if (i1 == pakMap.end()) return Data();
+
+	i1->second.first = true;
+
+	const FDirItem *d = i1->second.second->find(fname);
+	if (d == nullptr) return Data();
+
+	ClusterID cid(reinterpret_cast<uintptr_t>(i1->first.c_str()), d->cluster);
+
+	auto i2 = clusterMap.find(cid);
+	if (i2 == clusterMap.end()) i2 = loadCluster(*i1->second.second, *d, cid);
+	if (i2 == clusterMap.end()) return Data();
+
+	i1->second.first = true;
+
+
+	return Data(PakFile::extract(*i2->second.second, *d), i2->second.second);
+
+}
+
+PakManager::PakMap::iterator PakManager::loadPak(const std::string& name) {
+
+	while (pak_lru.size() >= pakCacheCnt) {
+		for (unsigned int i = 0; i < pakCacheCnt;i++) {
+			auto i1 = pakMap.find(*pak_lru.front());
+			if (i1 == pakMap.end() || !i1->second.first) {
+				pakMap.erase(i1);
+				pak_lru.pop();
+			} else {
+				i1->second.first = false;
+				pak_lru.push(pak_lru.front());
+				pak_lru.pop();
+			}
+		}
+	}
+
+	std::string fname = rootPath+name;
+	PPakFile pp(true, std::make_shared<PakFile>(fname));
+	if (!pp.second->is_valid()) return pakMap.end();
+	auto i1 = pakMap.insert(std::make_pair(name, pp)).first;
+	pak_lru.push(&i1->first);
+	return i1;
+}
+
+PakManager::ClusterMap::iterator PakManager::loadCluster( PakFile& pak,
+		const FDirItem& entry, const ClusterID& id) {
+
+	while (cluster_lru.size() >= clusterCacheCnt) {
+		for (unsigned int i = 0; i < pakCacheCnt;i++) {
+			auto i1 = clusterMap.find(*cluster_lru.front());
+			if (i1 == clusterMap.end() || !i1->second.first) {
+				clusterMap.erase(i1);
+				cluster_lru.pop();
+			} else {
+				i1->second.first = false;
+				cluster_lru.push(cluster_lru.front());
+				cluster_lru.pop();
+			}
+		}
+	}
+
+	PCluster clst(true,std::make_shared<Cluster>(pak.load(entry)));
+	auto i1 = clusterMap.insert(std::make_pair(std::move(id), std::move(clst))).first;
+	cluster_lru.push(&i1->first);
+	return i1;
+
+
+}
+
+bool PakManager::Data::is_valid() const {
+	return owner != nullptr;
+}
+
+}
+

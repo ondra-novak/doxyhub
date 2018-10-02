@@ -10,8 +10,9 @@
 
 #include <shared/refcnt.h>
 #include <shared/stringview.h>
+#include <memory>
 #include <queue>
-#include <unordered_map>
+#include <map>
 
 namespace zwebpak {
 
@@ -51,6 +52,57 @@ protected:
 
 };
 
+
+class PakManager {
+public:
+
+	PakManager(const std::string &rootPath,unsigned int pakCacheCnt,unsigned int clusterCacheCnt);
+
+	template<typename T>
+	using RLUItem = std::pair<bool, T>;
+
+	using PCluster = RLUItem<std::shared_ptr<Cluster> >;
+	using PPakFile = RLUItem<std::shared_ptr<PakFile> >;
+	class Data: public BinaryView {
+	public:
+
+		Data(const BinaryView &dataview, const std::shared_ptr<Cluster> &owner):BinaryView(dataview),owner(owner) {}
+		Data():owner(nullptr) {}
+
+		bool is_valid() const;
+
+	protected:
+		const std::shared_ptr<Cluster> owner;
+
+	};
+
+
+	Data load(const std::string &pakName, const StrViewA &fname);
+
+
+	using PakMap = std::map<std::string, PPakFile>;
+	using ClusterID = std::pair<std::uintptr_t, std::uint64_t>;
+	using ClusterMap = std::map<ClusterID, PCluster>;
+
+
+	protected:
+
+	using PakLRU = std::queue<const std::string *>;
+	using ClusterLRU = std::queue<const ClusterID *>;
+
+	std::string rootPath;
+	unsigned int pakCacheCnt;
+	unsigned int clusterCacheCnt;
+
+	PakMap pakMap;
+	ClusterMap clusterMap;
+	PakLRU pak_lru;
+	ClusterLRU cluster_lru;
+
+	PakMap::iterator loadPak(const std::string &name);
+	ClusterMap::iterator loadCluster(PakFile &pak, const FDirItem &entry, const ClusterID &id);
+
+};
 
 
 
