@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 2.8) 
 add_compile_options(-std=c++11 -fPIC)
-file(GLOB zwebpak_SRC "*.cpp")
-file(GLOB zwebpak_HDR "*.h" "*.tcc")
+file(GLOB zwebpak_SRC "zwebpak.cpp")
+file(GLOB zwebpak_HDR "zwebpak.h")
 add_library (zwebpak ${zwebpak_SRC})
 # target_include_directories (zwebpak PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
+add_executable(zwebpacker "pack.cpp")
+target_link_libraries(zwebpacker LINK_PUBLIC zwebpak z)
+add_executable(zwebunpack "unpack_test.cpp")
+target_link_libraries(zwebunpack LINK_PUBLIC zwebpak z)

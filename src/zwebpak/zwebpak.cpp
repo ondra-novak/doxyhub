@@ -47,16 +47,16 @@ bool compare_by_hash(const FDirItem &a, const FDirItem &b) {
 	return a.name_hash < b.name_hash;
 }
 
-std::vector<FInfo> initDirectory(const StringView<StrViewA> &files, const StrViewA &rootDir) {
+std::vector<FInfo> initDirectory(const StringView<std::string> &files, const std::string &rootDir) {
 
 	std::vector<FInfo> result;
 	result.reserve(files.length);
 	std::string buffer(rootDir.begin(), rootDir.end());
 	std::size_t blen(buffer.length());
 
-	for(auto ff : files) {
+	for(auto &&ff : files) {
 
-		buffer.append(ff.data, ff.length);
+		buffer.append(ff);
 		struct stat s;
 		if (stat(buffer.c_str(), &s) == 0) {
 
@@ -97,7 +97,7 @@ public:
 		path.append(x.data, x.length);
 		std::ifstream inf(path, std::ios::in| std::ios::binary);
 		int i;
-		while (!inf && (i = inf.get()) != EOF ) {
+		while (!(!inf) && (i = inf.get()) != EOF ) {
 			data.push_back((char)i);
 		}
 		return static_cast<std::uint32_t>(ret);
@@ -107,6 +107,7 @@ public:
 	}
 	void flush(std::ostream &output) {
 
+		if (data.empty()) return;
 
 		std::vector<char> obuff;
 		obuff.resize(compressBound(data.size()));
@@ -136,6 +137,7 @@ public:
 		stream_write(output, orgsz);
 
 		output.write(toWrite.data, toWrite.length);
+		data.resize(0);
 	}
 
 protected:
@@ -148,7 +150,7 @@ protected:
 };
 
 
-bool packFiles(const StringView<StrViewA> &files, const StrViewA &rootDir, const StrViewA &targetFile, std::size_t clusterSize) {
+bool packFiles(const StringView<std::string> &files, const std::string &rootDir, const std::string &targetFile, std::size_t clusterSize) {
 
 	std::vector<FInfo > fwrk(initDirectory(files,rootDir));
 	std::sort(fwrk.begin(), fwrk.end(), [](const FInfo &a, const FInfo &b) {
@@ -160,8 +162,7 @@ bool packFiles(const StringView<StrViewA> &files, const StrViewA &rootDir, const
 		return a.size < b.size;
 	});
 
-	std::string tfname(targetFile.data, targetFile.length);
-	std::ofstream of(tfname, std::ios::out|std::ios::trunc|std::ios::binary);
+	std::ofstream of(targetFile, std::ios::out|std::ios::trunc|std::ios::binary);
 	if (!of) return false;
 
 	std::uint32_t entries = static_cast<std::uint32_t>(fwrk.size());
@@ -174,7 +175,7 @@ bool packFiles(const StringView<StrViewA> &files, const StrViewA &rootDir, const
 
 	Clusterizer cls(clusterSize, rootDir);
 
-	for (auto ff : fwrk) {
+	for (auto &&ff : fwrk) {
 
 		ff.cluster = of.tellp();
 		ff.offset = cls.append_file(ff.name);
@@ -183,6 +184,8 @@ bool packFiles(const StringView<StrViewA> &files, const StrViewA &rootDir, const
 			if (!of) return false;
 		}
 	}
+	cls.flush(of);
+	if (!of) return false;
 
 	std::sort(fwrk.begin(), fwrk.end(), compare_by_hash);
 
@@ -266,43 +269,53 @@ PakManager::Data PakManager::load(const std::string& pakName, const StrViewA& fn
 	if (i1 == pakMap.end()) i1 = loadPak(pakName);
 	if (i1 == pakMap.end()) return Data();
 
-	i1->second.first = true;
+	i1->second.used = true;
 
-	const FDirItem *d = i1->second.second->find(fname);
+	const FDirItem *d = i1->second.object->find(fname);
 	if (d == nullptr) return Data();
 
 	ClusterID cid(reinterpret_cast<uintptr_t>(i1->first.c_str()), d->cluster);
 
 	auto i2 = clusterMap.find(cid);
-	if (i2 == clusterMap.end()) i2 = loadCluster(*i1->second.second, *d, cid);
+	if (i2 == clusterMap.end()) i2 = loadCluster(*i1->second.object, *d, cid);
 	if (i2 == clusterMap.end()) return Data();
 
-	i1->second.first = true;
+	i1->second.used= true;
 
 
-	return Data(PakFile::extract(*i2->second.second, *d), i2->second.second);
+	return Data(PakFile::extract(*i2->second.object, *d), i2->second.object);
+
+}
+
+template<typename LRU, typename MAP>
+void clear_cache(LRU &pak_lru, std::size_t pakCacheCnt, MAP &pakMap) {
+	while (pak_lru.size() >= pakCacheCnt) {
+		std::size_t cnt = 0;
+		while (true) {
+			auto i1 = pakMap.find(*pak_lru.front());
+			if (i1 == pakMap.end() || !i1->second.used || cnt >=pakCacheCnt/2) {
+				pakMap.erase(i1);
+				pak_lru.pop();
+				break;
+			} else {
+				i1->second.used = false;
+				pak_lru.push(pak_lru.front());
+				pak_lru.pop();
+				cnt++;
+			}
+		}
+	}
 
 }
 
 PakManager::PakMap::iterator PakManager::loadPak(const std::string& name) {
 
-	while (pak_lru.size() >= pakCacheCnt) {
-		for (unsigned int i = 0; i < pakCacheCnt;i++) {
-			auto i1 = pakMap.find(*pak_lru.front());
-			if (i1 == pakMap.end() || !i1->second.first) {
-				pakMap.erase(i1);
-				pak_lru.pop();
-			} else {
-				i1->second.first = false;
-				pak_lru.push(pak_lru.front());
-				pak_lru.pop();
-			}
-		}
-	}
+
+	clear_cache(pak_lru, pakCacheCnt, pakMap);
 
 	std::string fname = rootPath+name;
-	PPakFile pp(true, std::make_shared<PakFile>(fname));
-	if (!pp.second->is_valid()) return pakMap.end();
+	PPakFile pp(std::make_shared<PakFile>(fname));
+	if (!pp.object->is_valid()) return pakMap.end();
 	auto i1 = pakMap.insert(std::make_pair(name, pp)).first;
 	pak_lru.push(&i1->first);
 	return i1;
@@ -311,21 +324,9 @@ PakManager::PakMap::iterator PakManager::loadPak(const std::string& name) {
 PakManager::ClusterMap::iterator PakManager::loadCluster( PakFile& pak,
 		const FDirItem& entry, const ClusterID& id) {
 
-	while (cluster_lru.size() >= clusterCacheCnt) {
-		for (unsigned int i = 0; i < pakCacheCnt;i++) {
-			auto i1 = clusterMap.find(*cluster_lru.front());
-			if (i1 == clusterMap.end() || !i1->second.first) {
-				clusterMap.erase(i1);
-				cluster_lru.pop();
-			} else {
-				i1->second.first = false;
-				cluster_lru.push(cluster_lru.front());
-				cluster_lru.pop();
-			}
-		}
-	}
+	clear_cache(cluster_lru, clusterCacheCnt, clusterMap);
 
-	PCluster clst(true,std::make_shared<Cluster>(pak.load(entry)));
+	PCluster clst(std::make_shared<Cluster>(pak.load(entry)));
 	auto i1 = clusterMap.insert(std::make_pair(std::move(id), std::move(clst))).first;
 	cluster_lru.push(&i1->first);
 	return i1;

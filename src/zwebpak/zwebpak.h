@@ -10,6 +10,7 @@
 
 #include <shared/refcnt.h>
 #include <shared/stringview.h>
+#include <fstream>
 #include <memory>
 #include <queue>
 #include <map>
@@ -21,7 +22,7 @@ using ondra_shared::StrViewA;
 using ondra_shared::StringView;
 
 
-bool packFiles(const StringView<StrViewA> &files, const StrViewA &rootDir, const StrViewA &targetFile, std::size_t clusterSize);
+bool packFiles(const StringView<std::string> &files, const std::string &rootDir, const std::string &targetFile, std::size_t clusterSize);
 
 using Cluster = std::vector<unsigned char>;
 
@@ -59,8 +60,13 @@ public:
 	PakManager(const std::string &rootPath,unsigned int pakCacheCnt,unsigned int clusterCacheCnt);
 
 	template<typename T>
-	using RLUItem = std::pair<bool, T>;
+	struct RLUItem {
+		bool used;
+		T object;
 
+		RLUItem(const T &a):used(true),object(a) {}
+		RLUItem(T &&a):used(true),object(std::move(a)) {}
+	};
 	using PCluster = RLUItem<std::shared_ptr<Cluster> >;
 	using PPakFile = RLUItem<std::shared_ptr<PakFile> >;
 	class Data: public BinaryView {
@@ -101,6 +107,8 @@ public:
 
 	PakMap::iterator loadPak(const std::string &name);
 	ClusterMap::iterator loadCluster(PakFile &pak, const FDirItem &entry, const ClusterID &id);
+
+
 
 };
 
