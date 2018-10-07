@@ -19,6 +19,7 @@ public:
 
 	std::string doxygen;
 	std::string git;
+	std::string curl;
 
 	couchit::Config dbconfig;
 
@@ -27,11 +28,13 @@ public:
 	std::string doxyfile;
 	std::string queueId;
 
+
 	std::string logfile;
 	std::string loglevel;
 
 	int activityTimeout;
 	int totalTimeout;
+	std::size_t clusterSize;
 
 	void parse(const std::string &name);
 

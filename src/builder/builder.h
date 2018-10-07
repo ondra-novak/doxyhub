@@ -22,7 +22,7 @@ class Builder {
 public:
 	Builder(const Config &cfg, EnvVars envVars);
 
-	void buildDoc(const std::string &url, const std::string &output_name, const std::string &revision);
+	void buildDoc(const std::string &url, const std::string &output_name, const std::string &revision, const std::string &upload_url);
 	void deleteDoc(const std::string &output_name);
 	std::size_t calcSize(const std::string &output_name);
 
@@ -42,6 +42,7 @@ protected:
 	typedef ActiveObject<ExternalProcess>::Guard AGuard;
 
 	std::string get_git_last_revision(ExternalProcessWithLog &&git, const std::string &url);
+
 
 };
 

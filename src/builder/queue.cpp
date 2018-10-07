@@ -21,7 +21,7 @@ using ondra_shared::AbstractLogProviderFactory;
 
 static StrViewA filterFn = R"javascript(
 function(doc,req) {
-	return doc.url && (doc.status == "queued" || doc.status == "delete") && doc.queue == req.query.queueid;
+	return doc.url && doc.upload_url && (doc.status == "queued" || doc.status == "delete") && doc.queue == req.query.queueid;
 }
 
 )javascript";
@@ -90,7 +90,8 @@ void Queue::processChange(const ChangeEvent &doc) {
 				put_merge(curDoc);
 				try {
 					bld.buildDoc(curDoc["url"].getString(),
-							curDoc.getID(), curDoc["build_rev"].getString());
+							curDoc.getID(), curDoc["build_rev"].getString(),
+							curDoc["upload_url"].getString());
 					curDoc.set("disksize", bld.calcSize(curDoc.getID()));
 					curDoc.set("status","done");
 					curDoc.unset("error");

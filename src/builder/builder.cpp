@@ -18,6 +18,8 @@
 #include <fcntl.h>
 #include "walk_dir.h"
 
+#include "../zwebpak/zwebpak.h"
+
 namespace doxyhub {
 
 using simpleServer::SystemException;
@@ -99,6 +101,7 @@ static std::string combineLogs(std::ostringstream &git, std::ostringstream &doxy
 	return tmp.str();
 }
 
+/*
 static bool copy_file_only(const std::string &src, const std::string &trg) {
 
 	typedef RAII<int, decltype(&close), &close> FD;
@@ -133,7 +136,9 @@ static void recursive_move(const std::string &source, const std::string& target)
 		return true;
 	});
 }
+*/
 
+/*
 static void fast_replace(const std::string& src_path, const std::string& target_path) {
 	std::string movedOut;
 	if (access(target_path.c_str(), 0) == 0) {
@@ -152,12 +157,28 @@ static void fast_replace(const std::string& src_path, const std::string& target_
 		rmdir(movedOut.c_str());
 	}
 }
+*/
+void pack_files(const std::string &path, const std::string &file, std::size_t clusterSize) {
 
-void Builder::buildDoc(const std::string& url, const std::string& output_name, const std::string &revision) {
+	std::vector<std::string> files;
+	WalkDir::walk_directory(path, true, [&](const std::string &p, WalkDir::WalkEvent ev) {
+		if (ev == WalkDir::file_entry) {
+			files.push_back(p.substr(path.length()+1));
+		}
+		return true;
+	});
+
+	if (!zwebpak::packFiles(files, path+"/", file, clusterSize)) {
+		throw std::runtime_error("Failed to pack files:" + file);
+	}
+}
+
+void Builder::buildDoc(const std::string& url, const std::string& output_name, const std::string &revision, const std::string &upload_url) {
 
 
 	ExternalProcessWithLog doxygen(cfg.doxygen,envVars,cfg.activityTimeout, cfg.totalTimeout);
 	ExternalProcessWithLog git(cfg.git,envVars,cfg.activityTimeout, cfg.totalTimeout);
+	ExternalProcessWithLog curl(cfg.curl, envVars, cfg.activityTimeout, cfg.totalTimeout);
 
 
 	std::string curRev = get_git_last_revision(std::move(git), url);
@@ -216,10 +237,20 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 		throw std::runtime_error("Doxygen failed for url: " + url);
 	}
 
-	makeDir(newpath);
+/*	makeDir(newpath);
 	recursive_erase(newpath);
 	recursive_move(build_html, newpath);
-	fast_replace(newpath,path);
+	fast_replace(newpath,path);*/
+	pack_files(build_html, path, cfg.clusterSize);
+	curl.set_start_dir(build_html);
+	res = curl.execute({"-X","PUT","-H","Content-Type: application/octet-stream","--data-binary", "@"+path, upload_url});
+	unlink(path.c_str());
+	recursive_erase(build);
+
+	if (res != 0) {
+		throw std::runtime_error("Upload failed to url: " + upload_url);
+	}
+
 }
 
 static StrViewA extractNameFromURL(StrViewA url) {

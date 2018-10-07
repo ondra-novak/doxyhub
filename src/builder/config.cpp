@@ -29,6 +29,7 @@ void Config::parse(const std::string& name) {
 	const IniConfig::KeyValueMap &tools = cfg["tools"];
 	doxygen = tools.mandatory["doxygen"].getPath();
 	git = tools.mandatory["git"].getPath();
+	curl = tools.mandatory["curl"].getPath();
 	activityTimeout = tools.mandatory["activity_timeout"].getUInt();
 	totalTimeout = tools.mandatory["total_timeout"].getUInt();
 
@@ -43,6 +44,8 @@ void Config::parse(const std::string& name) {
 	working= generate.mandatory["working"].getPath();
 	doxyfile = generate.mandatory["doxyfile"].getPath();
 	queueId = generate.mandatory["queue_id"].getString();
+	clusterSize = generate.mandatory["cluster_size"].getUInt();
+
 
 	const IniConfig::KeyValueMap &log = cfg["log"];
 	logfile = log.mandatory["file"].getPath();

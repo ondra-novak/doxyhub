@@ -18,11 +18,13 @@
 #include <ctime>
 #include <memory>
 #include <shared/raii.h>
+#include <shared/logOutput.h>
 
 namespace doxyhub {
 
 using simpleServer::SystemException;
 using ondra_shared::RAII;
+using ondra_shared::logDebug;
 
 
 ExternalProcess::ExternalProcess(std::string pathname, EnvVars envp, unsigned int activityTimeout, unsigned int totalTimeout)
@@ -97,6 +99,8 @@ namespace {
 }
 
 int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
+
+	logDebug("External process (@$3): $1 $2 ", pathname, args, start_dir);
 
 	try {
 		Fd stdout_read, stdout_write;
