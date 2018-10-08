@@ -47,6 +47,11 @@ void ServerConfig::parse(const std::string& name) {
 	server_threads = server.mandatory["threads"].getUInt();
 	server_dispatchers = server.mandatory["dispatchers"].getUInt();
 
+	const IniConfig::KeyValueMap &storage = cfg["storage"];
+	upload_url = storage.mandatory["upload_url"].getString();
+	storage_path = storage.mandatory["storage_path"].getPath();
+	pakCacheCnt = storage.mandatory["site_cache_items"].getUInt();
+	clusterCacheCnt = storage.mandatory["cluster_cache_items"].getUInt();
 }
 
 

@@ -16,27 +16,25 @@ using namespace json;
 
 static StrViewA filterFn = R"javascript(
 function(doc,req) {
-	return doc.url && (doc.status == "queued" || doc.status == "delete") && doc.queue == req.query.queueid;
+	return doc.url && doc.upload_url && doc.upload_token && doc.status == "queued" && doc.queue == req.query.queueid;
 }
 )javascript";
 
 static StrViewA queueStats = R"javascript(
 function(doc) {
-	if (doc.url && doc.queue && doc.disksize) emit(doc.queue, doc.disksize);
+	if (doc.url && doc.queue && (doc.status == "queued" || doc.status == "building")) { 
+		emit(doc.queue, 1);
+	} else if (doc.type == "queue") {
+		emit(doc._id, 0);
+	}
 }
 )javascript";
 
-static StrViewA queueList = R"javascript(
-function(doc) {
-	if (doc.type=="queue") emit(doc._id, doc.space);
-}
-)javascript";
 
 static Value queueDesignDoc = Object("_id","_design/queue")
 		("language","javascript")
 		("filters", Object("queue", filterFn))
 		("views", Object("stats", Object("map",queueStats)("reduce","_sum"))
-				        ("list", Object("map",queueList)("reduce","_sum"))
 		);
 
 

@@ -26,6 +26,12 @@ public:
 	int server_dispatchers;
 	std::string bind;
 
+	std::string upload_url;
+	std::string storage_path;
+
+	std::size_t pakCacheCnt;
+	std::size_t clusterCacheCnt;
+
 	void parse(const std::string &name);
 
 protected:

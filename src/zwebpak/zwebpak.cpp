@@ -274,11 +274,13 @@ PakManager::Data PakManager::load(const std::string& pakName, const StrViewA& fn
 	const FDirItem *d = i1->second.object->find(fname);
 	if (d == nullptr) return Data();
 
-	ClusterID cid(reinterpret_cast<uintptr_t>(i1->first.c_str()), d->cluster);
+	ClusterKey cid(&i1->first, d->cluster);
 
 	auto i2 = clusterMap.find(cid);
-	if (i2 == clusterMap.end()) i2 = loadCluster(*i1->second.object, *d, cid);
-	if (i2 == clusterMap.end()) return Data();
+	if (i2 == clusterMap.end())
+		i2 = loadCluster(*i1->second.object, *d, cid);
+	if (i2 == clusterMap.end())
+		return Data();
 
 	i1->second.used= true;
 
@@ -321,8 +323,12 @@ PakManager::PakMap::iterator PakManager::loadPak(const std::string& name) {
 	return i1;
 }
 
+void PakManager::invalidate(const std::string& pakName) {
+	pakMap.erase(pakName);
+}
+
 PakManager::ClusterMap::iterator PakManager::loadCluster( PakFile& pak,
-		const FDirItem& entry, const ClusterID& id) {
+		const FDirItem& entry, const ClusterKey& id) {
 
 	clear_cache(cluster_lru, clusterCacheCnt, clusterMap);
 

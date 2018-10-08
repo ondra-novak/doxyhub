@@ -15,6 +15,7 @@
 #include <simpleServer/address.h>
 #include <rpc/rpcServer.h>
 #include <couchit/couchDB.h>
+#include "SiteServer.h"
 
 
 #include "initdb.h"
@@ -52,6 +53,8 @@ int main(int argc, char **argv) {
 		AsyncProvider asyncProvider = ThreadPoolAsync::create(cfg.server_threads, cfg.server_dispatchers);
 		NetAddr addr = NetAddr::create(cfg.bind,8800,NetAddr::IPvAll);
 
+		SiteServer page_sources(cfg.storage_path, cfg.pakCacheCnt, cfg.clusterCacheCnt);
+
 		RpcHttpServer serverObj(addr, asyncProvider);
 		RpcHttpServer::Config scfg;
 		scfg.enableConsole = true;
@@ -62,6 +65,9 @@ int main(int argc, char **argv) {
 		serverObj.addRPCPath("/RPC", scfg);
 		serverObj.add_listMethods("methods");
 		serverObj.add_ping("ping");
+		serverObj.addPath("/docs", [&](const HTTPRequest &req, const StrViewA &vpath) {
+			return page_sources.serve(req, vpath);
+		});
 
 		BldControl bldcont(builderdb);
 		bldcont.init(serverObj);

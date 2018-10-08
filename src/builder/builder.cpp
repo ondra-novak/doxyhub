@@ -173,7 +173,11 @@ void pack_files(const std::string &path, const std::string &file, std::size_t cl
 	}
 }
 
-void Builder::buildDoc(const std::string& url, const std::string& output_name, const std::string &revision, const std::string &upload_url) {
+void Builder::buildDoc(const std::string& url,
+		const std::string& output_name,
+		const std::string &revision,
+		const std::string &upload_url,
+		const std::string &upload_token) {
 
 
 	ExternalProcessWithLog doxygen(cfg.doxygen,envVars,cfg.activityTimeout, cfg.totalTimeout);
@@ -243,7 +247,11 @@ void Builder::buildDoc(const std::string& url, const std::string& output_name, c
 	fast_replace(newpath,path);*/
 	pack_files(build_html, path, cfg.clusterSize);
 	curl.set_start_dir(build_html);
-	res = curl.execute({"-X","PUT","-H","Content-Type: application/octet-stream","--data-binary", "@"+path, upload_url});
+	std::string token_header = "Authorization: bearer "+upload_token;
+	res = curl.execute({"-X","PUT",
+			"-H","Content-Type: application/octet-stream",
+			"-H",token_header,
+			"--data-binary", "@"+path, upload_url});
 	unlink(path.c_str());
 	recursive_erase(build);
 

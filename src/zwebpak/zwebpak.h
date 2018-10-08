@@ -84,17 +84,21 @@ public:
 
 
 	Data load(const std::string &pakName, const StrViewA &fname);
+	void invalidate(const std::string &pakName);
 
 
 	using PakMap = std::map<std::string, PPakFile>;
-	using ClusterID = std::pair<std::uintptr_t, std::uint64_t>;
-	using ClusterMap = std::map<ClusterID, PCluster>;
+	using PakID = const std::string *;
+	using ClusterID = std::uint64_t;
+	using ClusterKey = std::pair<PakID, ClusterID>;
+	using ClusterMap = std::map<ClusterKey, PCluster>;
+	using ClusterKeyID =const ClusterKey *;
 
 
 	protected:
 
-	using PakLRU = std::queue<const std::string *>;
-	using ClusterLRU = std::queue<const ClusterID *>;
+	using PakLRU = std::queue<PakID>;
+	using ClusterLRU = std::queue<ClusterKeyID>;
 
 	std::string rootPath;
 	unsigned int pakCacheCnt;
@@ -105,8 +109,10 @@ public:
 	PakLRU pak_lru;
 	ClusterLRU cluster_lru;
 
-	PakMap::iterator loadPak(const std::string &name);
-	ClusterMap::iterator loadCluster(PakFile &pak, const FDirItem &entry, const ClusterID &id);
+	virtual PakMap::iterator loadPak(const std::string &name);
+	virtual ClusterMap::iterator loadCluster(PakFile &pak, const FDirItem &entry, const ClusterKey &id);
+
+
 
 
 
