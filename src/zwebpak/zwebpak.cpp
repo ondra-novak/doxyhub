@@ -90,17 +90,24 @@ public:
 		,path(rootDir.begin(), rootDir.end())
 		,plen(rootDir.length) {}
 
-	std::uint32_t append_file(const StrViewA &x) {
+	void append_file(FInfo &ff) {
 
-		std::uint64_t ret = data.size();
+		ff.offset = data.size();
 		path.resize(plen);
-		path.append(x.data, x.length);
+		path.append(ff.name.data, ff.name.length);
 		std::ifstream inf(path, std::ios::in| std::ios::binary);
 		int i;
+
+		std::uint64_t content_hash;
+		FNV1a64 hash_calc(content_hash);
+
 		while (!(!inf) && (i = inf.get()) != EOF ) {
-			data.push_back((char)i);
+			char c = static_cast<char>(i);
+			data.push_back(c);
+			hash_calc(c);
 		}
-		return static_cast<std::uint32_t>(ret);
+
+		ff.content_hash = content_hash;
 	}
 	bool isfull() const {
 		return data.size() >= base_size;
@@ -166,7 +173,13 @@ bool packFiles(const StringView<std::string> &files, const std::string &rootDir,
 	if (!of) return false;
 
 	std::uint32_t entries = static_cast<std::uint32_t>(fwrk.size());
-	stream_write(of, entries);
+
+	PakHeader hdr;
+	std::copy(pak_magic.begin(), pak_magic.end(), std::begin(hdr.magic));
+	hdr.dir_size = entries;
+	hdr.version = pak_version;
+
+	stream_write(of, hdr);
 
 	for (auto ff :fwrk) {
 		const FDirItem &itm = ff;
@@ -178,7 +191,7 @@ bool packFiles(const StringView<std::string> &files, const std::string &rootDir,
 	for (auto &&ff : fwrk) {
 
 		ff.cluster = of.tellp();
-		ff.offset = cls.append_file(ff.name);
+		cls.append_file(ff);
 		if (cls.isfull()) {
 			cls.flush(of);
 			if (!of) return false;
@@ -189,7 +202,7 @@ bool packFiles(const StringView<std::string> &files, const std::string &rootDir,
 
 	std::sort(fwrk.begin(), fwrk.end(), compare_by_hash);
 
-	of.seekp(4,std::ios::beg);
+	of.seekp(sizeof(PakHeader),std::ios::beg);
 
 	for (auto ff :fwrk) {
 		const FDirItem &itm = ff;
@@ -285,7 +298,7 @@ PakManager::Data PakManager::load(const std::string& pakName, const StrViewA& fn
 	i1->second.used= true;
 
 
-	return Data(PakFile::extract(*i2->second.object, *d), i2->second.object);
+	return Data(PakFile::extract(*i2->second.object, *d), i2->second.object, d->content_hash);
 
 }
 
@@ -325,6 +338,19 @@ PakManager::PakMap::iterator PakManager::loadPak(const std::string& name) {
 
 void PakManager::invalidate(const std::string& pakName) {
 	pakMap.erase(pakName);
+}
+
+bool PakManager::getContentHash(const std::string &pakName, const StrViewA &fname, std::uint64_t &hash) {
+	auto i1 = pakMap.find(pakName);
+	if (i1 == pakMap.end()) i1 = loadPak(pakName);
+	if (i1 == pakMap.end()) return false;
+
+	i1->second.used = true;
+
+	const FDirItem *d = i1->second.object->find(fname);
+	if (d == nullptr) return false;
+	hash = d->content_hash;
+	return true;
 }
 
 PakManager::ClusterMap::iterator PakManager::loadCluster( PakFile& pak,

@@ -28,11 +28,20 @@ using Cluster = std::vector<unsigned char>;
 
 struct FDirItem {
 	std::uint64_t name_hash;
+	std::uint64_t content_hash;
 	std::uint64_t cluster;
 	std::uint32_t offset;
 	std::uint32_t size;
 };
 
+constexpr ondra_shared::StrViewA pak_magic("ZWEBPAK\0",8);
+constexpr std::uint32_t pak_version(0x100);
+
+struct PakHeader {
+	char magic[pak_magic.length];
+	std::uint32_t version;
+	std::uint32_t dir_size;
+};
 
 class PakFile {
 public:
@@ -72,18 +81,53 @@ public:
 	class Data: public BinaryView {
 	public:
 
-		Data(const BinaryView &dataview, const std::shared_ptr<Cluster> &owner):BinaryView(dataview),owner(owner) {}
-		Data():owner(nullptr) {}
+		Data(const BinaryView &dataview,
+			const std::shared_ptr<Cluster> &owner,
+			std::uint64_t content_hash)
+			:BinaryView(dataview),content_hash(content_hash),owner(owner) {}
+
+		Data():content_hash(0),owner(nullptr) {}
 
 		bool is_valid() const;
 
+		const std::uint64_t content_hash;
 	protected:
 		const std::shared_ptr<Cluster> owner;
+
 
 	};
 
 
+	///Loads data from the pak file
+	/**
+	 * @param pakName name of zwebpak file
+	 * @param fname name (or path) of packed file inside of the zwebpak file
+	 * @return loaded data. Always check is_valid() which is returns false, when
+	 * the file cannot be loaded
+	 */
 	Data load(const std::string &pakName, const StrViewA &fname);
+
+	///Determines content_hash of the file
+	/** returns hash of content of the file. This only need to access
+	 * directory of the pak file, without need to decode whole cluster. It
+	 * is purposed to support ETags. When ETag matches, no cluster
+	 * need to be decoded for the request
+	 * @param pakName name of zwebpak
+	 * @param fname name (or path) inside of zwebpak
+	 * @param hash reference to variable which receives the hash
+	 * @retval true success
+	 * @retval false failure, probably file not found
+	 */
+	bool getContentHash(const std::string &pakName, const StrViewA &fname, std::uint64_t &hash);
+	///Invalidates the pakfile
+	/** this is need, when underlying file has been updated
+	 *
+	 * @param pakName name of zwebpak file
+	 *
+	 * @note this removes directory from the cache, so next request will
+	 * load a new version of the directory. However, any already opened
+	 * cluster is not invalidated, it must be closed first
+	 */
 	void invalidate(const std::string &pakName);
 
 

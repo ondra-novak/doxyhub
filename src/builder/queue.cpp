@@ -39,7 +39,7 @@ Queue::Queue(Builder &bld, CouchDB &db, const std::string &queueId)
 {
 	exitPhase = false;
 
-		db.putDesignDocument(queueDesignDoc);
+	//	db.putDesignDocument(queueDesignDoc);
 		if (!queueLastID["lastId"].defined()) {
 			queueLastID.set("lastId",nullptr);
 		}
