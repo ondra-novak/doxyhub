@@ -22,7 +22,11 @@ using ondra_shared::StrViewA;
 using ondra_shared::StringView;
 
 
-bool packFiles(const StringView<std::string> &files, const std::string &rootDir, const std::string &targetFile, std::size_t clusterSize);
+bool packFiles(const StringView<std::string> &files,
+		const std::string &rootDir,
+		const std::string &targetFile,
+		const std::string &revision,
+		std::size_t clusterSize);
 
 using Cluster = std::vector<unsigned char>;
 
@@ -36,9 +40,11 @@ struct FDirItem {
 
 constexpr ondra_shared::StrViewA pak_magic("ZWEBPAK\0",8);
 constexpr std::uint32_t pak_version(0x100);
+constexpr int revision_size = 8;
 
 struct PakHeader {
 	char magic[pak_magic.length];
+	char rev[revision_size];
 	std::uint32_t version;
 	std::uint32_t dir_size;
 };
@@ -51,14 +57,14 @@ public:
 	const FDirItem *find(const StrViewA &fname);
 	Cluster load(const FDirItem &entry);
 	static BinaryView extract(const Cluster &cluster, const FDirItem &entry);
+	const std::string &getRevision() const {return revision;}
 
 	bool is_valid() const;
 
 protected:
 	std::ifstream f;
 	std::vector<FDirItem> fdir;
-
-
+	std::string revision;
 
 };
 
@@ -131,6 +137,9 @@ public:
 	void invalidate(const std::string &pakName);
 
 
+	///Retrieves revision string (short revision) of this webpak
+	std::string getRevision(const std::string &pakName);
+
 	using PakMap = std::map<std::string, PPakFile>;
 	using PakID = const std::string *;
 	using ClusterID = std::uint64_t;
@@ -139,7 +148,7 @@ public:
 	using ClusterKeyID =const ClusterKey *;
 
 
-	protected:
+protected:
 
 	using PakLRU = std::queue<PakID>;
 	using ClusterLRU = std::queue<ClusterKeyID>;

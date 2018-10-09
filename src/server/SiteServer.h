@@ -28,6 +28,9 @@ protected:
 	static simpleServer::HttpFileMapper mimesrc;
 	std::mutex mx;
 
+	bool create_etag(const std::string &pakfile, const StrViewA &path, std::string &etag);
+	void redirect(HTTPRequest req, std::size_t vpathSize, const StrViewA &file, const StrViewA &rev, const StrViewA &path, bool permanent);
+
 };
 
 } /* namespace doxyhub */

@@ -17,6 +17,7 @@
 #include <fstream>
 #include <fcntl.h>
 #include "walk_dir.h"
+#include <shared/logOutput.h>
 
 #include "../zwebpak/zwebpak.h"
 
@@ -24,6 +25,7 @@ namespace doxyhub {
 
 using simpleServer::SystemException;
 using ondra_shared::RAII;
+using ondra_shared::logDebug;
 using ondra_shared::StrViewA;
 
 Builder::Builder(const Config& cfg, EnvVars envVars):cfg(cfg),envVars(envVars) {
@@ -158,17 +160,19 @@ static void fast_replace(const std::string& src_path, const std::string& target_
 	}
 }
 */
-void pack_files(const std::string &path, const std::string &file, std::size_t clusterSize) {
+void pack_files(const std::string &path, const std::string &file, const std::string &revision, std::size_t clusterSize) {
 
 	std::vector<std::string> files;
 	WalkDir::walk_directory(path, true, [&](const std::string &p, WalkDir::WalkEvent ev) {
 		if (ev == WalkDir::file_entry) {
-			files.push_back(p.substr(path.length()+1));
+			std::string fname =p.substr(path.length()+1);
+			files.push_back(fname);
+			logDebug("Packing file: $1", fname);
 		}
 		return true;
 	});
 
-	if (!zwebpak::packFiles(files, path+"/", file, clusterSize)) {
+	if (!zwebpak::packFiles(files, path+"/", file, revision, clusterSize)) {
 		throw std::runtime_error("Failed to pack files:" + file);
 	}
 }
@@ -245,7 +249,7 @@ void Builder::buildDoc(const std::string& url,
 	recursive_erase(newpath);
 	recursive_move(build_html, newpath);
 	fast_replace(newpath,path);*/
-	pack_files(build_html, path, cfg.clusterSize);
+	pack_files(build_html, path, curRev, cfg.clusterSize);
 	curl.set_start_dir(build_html);
 	std::string token_header = "Authorization: bearer "+upload_token;
 	res = curl.execute({"-X","PUT",

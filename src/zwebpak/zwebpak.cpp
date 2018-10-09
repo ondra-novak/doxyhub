@@ -157,7 +157,13 @@ protected:
 };
 
 
-bool packFiles(const StringView<std::string> &files, const std::string &rootDir, const std::string &targetFile, std::size_t clusterSize) {
+bool packFiles(const StringView<std::string> &files,
+		const std::string &rootDir,
+		const std::string &targetFile,
+		const std::string &revision,
+		std::size_t clusterSize) {
+
+	std::string shortrev = revision.substr(0,revision_size);
 
 	std::vector<FInfo > fwrk(initDirectory(files,rootDir));
 	std::sort(fwrk.begin(), fwrk.end(), [](const FInfo &a, const FInfo &b) {
@@ -176,6 +182,7 @@ bool packFiles(const StringView<std::string> &files, const std::string &rootDir,
 
 	PakHeader hdr;
 	std::copy(pak_magic.begin(), pak_magic.end(), std::begin(hdr.magic));
+	std::copy(shortrev.begin(), shortrev.end(), std::begin(hdr.rev));
 	hdr.dir_size = entries;
 	hdr.version = pak_version;
 
@@ -214,10 +221,14 @@ bool packFiles(const StringView<std::string> &files, const std::string &rootDir,
 
 PakFile::PakFile(const std::string& fname):f(fname, std::ios::in|std::ios::binary) {
 	if (!f) return;
-	std::uint32_t cnt(0);
-	stream_read(f,cnt);
-	fdir.resize(cnt);
-	f.read(reinterpret_cast<char *>(fdir.data()), cnt * sizeof(FDirItem));
+	PakHeader hdr;
+	stream_read(f,hdr);
+	if (StrViewA(hdr.magic,pak_magic.length) != pak_magic) return;
+	if (hdr.version != pak_version) return;
+	revision.append(hdr.rev, revision_size);
+
+	fdir.resize(hdr.dir_size);
+	f.read(reinterpret_cast<char *>(fdir.data()), hdr.dir_size * sizeof(FDirItem));
 }
 
 const FDirItem *PakFile::find(const StrViewA& fname) {
@@ -369,6 +380,17 @@ PakManager::ClusterMap::iterator PakManager::loadCluster( PakFile& pak,
 bool PakManager::Data::is_valid() const {
 	return owner != nullptr;
 }
+
+std::string PakManager::getRevision(const std::string& pakName) {
+	auto i1 = pakMap.find(pakName);
+	if (i1 == pakMap.end()) i1 = loadPak(pakName);
+	if (i1 == pakMap.end()) return std::string();
+
+	i1->second.used = true;
+	return i1->second.object->getRevision();
+}
+
+
 
 }
 

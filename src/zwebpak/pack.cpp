@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 
 	root_dir.push_back('/');
 
-	if (zwebpak::packFiles(ondra_shared::StringView<std::string>(files.data(), files.size()), root_dir, name, 256*1024)) {
+	if (zwebpak::packFiles(ondra_shared::StringView<std::string>(files.data(), files.size()), root_dir, name,"testtest", 256*1024)) {
 		std::cerr << "Success" << std::endl;
 		return 0;
 	} else {

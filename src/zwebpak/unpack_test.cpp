@@ -23,12 +23,15 @@ int main(int argc, char *argv[]) {
 	zwebpak::PakManager pmanager("",16,16);
 	std::string ln;
 
+	std::string rev = pmanager.getRevision(argv[1]);
+	std::cerr << "Opened revision: " << rev << std::endl;
+
 	while (!!std::cout) {
 		std::getline(std::cin, ln);
 		if (!ln.empty()) {
 			auto b = pmanager.load(argv[1],ln);
 			if (b.is_valid()) {
-				std::cerr << "FOUND:" << b.length << std::endl;
+				std::cerr << "FOUND: length=" << b.length << ", hash=" << b.content_hash << std::endl;
 				std::cout.write(reinterpret_cast<const char *>(b.data), b.length);
 				std::cerr << std::endl;
 			} else {
