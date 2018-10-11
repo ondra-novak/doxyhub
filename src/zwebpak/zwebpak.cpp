@@ -337,11 +337,17 @@ void clear_cache(LRU &pak_lru, std::size_t pakCacheCnt, MAP &pakMap) {
 PakManager::PakMap::iterator PakManager::loadPak(const std::string& name) {
 
 
+	PPakFile pp(nullptr);
+	try {
+		std::string fname = rootPath+name;
+		pp = PPakFile (std::make_shared<PakFile>(fname));
+		if (!pp.object->is_valid()) return pakMap.end();
+	} catch (...) {
+		onLoadDone();
+		throw;
+	}
+	onLoadDone();
 	clear_cache(pak_lru, pakCacheCnt, pakMap);
-
-	std::string fname = rootPath+name;
-	PPakFile pp(std::make_shared<PakFile>(fname));
-	if (!pp.object->is_valid()) return pakMap.end();
 	auto i1 = pakMap.insert(std::make_pair(name, pp)).first;
 	pak_lru.push(&i1->first);
 	return i1;
@@ -367,9 +373,16 @@ bool PakManager::getContentHash(const std::string &pakName, const StrViewA &fnam
 PakManager::ClusterMap::iterator PakManager::loadCluster( PakFile& pak,
 		const FDirItem& entry, const ClusterKey& id) {
 
-	clear_cache(cluster_lru, clusterCacheCnt, clusterMap);
 
-	PCluster clst(std::make_shared<Cluster>(pak.load(entry)));
+	PCluster clst(nullptr);
+	try {
+		clst = PCluster(std::make_shared<Cluster>(pak.load(entry)));
+	} catch (...) {
+		onLoadDone();
+		throw;
+	}
+	onLoadDone();
+	clear_cache(cluster_lru, clusterCacheCnt, clusterMap);
 	auto i1 = clusterMap.insert(std::make_pair(std::move(id), std::move(clst))).first;
 	cluster_lru.push(&i1->first);
 	return i1;

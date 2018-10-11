@@ -11,6 +11,7 @@
 #include <imtjson/fnv.h>
 #include <simpleServer/query_parser.h>
 #include <sstream>
+#include <shared/logOutput.h>
 
 namespace doxyhub {
 
@@ -19,6 +20,8 @@ using simpleServer::HTTPResponse;
 using simpleServer::Redirect;
 using simpleServer::QueryParser;
 using ondra_shared::BinaryView;
+using ondra_shared::logProgress;
+
 
 
 simpleServer::HttpFileMapper SiteServer::mimesrc("","");
@@ -66,6 +69,7 @@ bool SiteServer::serve(HTTPRequest req, StrViewA vpath) {
 	HeaderValue match_etag = req["If-None-Match"];
 
 	std::unique_lock<std::mutex> _lock(mx);
+	reqcounter++;
 
 	std::string currev = getRevision(file);
 	if (!currev.empty() && rev != StrViewA(currev)) {
@@ -106,5 +110,24 @@ bool SiteServer::serve(HTTPRequest req, StrViewA vpath) {
 	return true;
 }
 
+SiteServer::PakMap::iterator SiteServer::loadPak(const std::string& name) {
+	pak_miss++;
+	logProgress("Loading directory: $1  - cache miss ration $2/$3 ($4)", name, pak_miss, reqcounter, pak_miss*100.0/reqcounter);
+	mx.unlock();
+	return zwebpak::PakManager::loadPak(name);
+}
+
+SiteServer::ClusterMap::iterator SiteServer::loadCluster(zwebpak::PakFile& pak,
+		const zwebpak::FDirItem& entry, const ClusterKey& id) {
+
+	cluster_miss++;
+	logProgress("Loading cluster: $1:$2  - cache miss ration $3/$4 ($5)", *id.first, id.second, cluster_miss, reqcounter, cluster_miss*100.0/reqcounter);
+	mx.unlock();
+	return zwebpak::PakManager::loadCluster(pak, entry, id);
+}
+
+void SiteServer::onLoadDone() noexcept {
+	mx.lock();
+}
 
 } /* namespace doxyhub */

@@ -165,6 +165,17 @@ protected:
 	virtual PakMap::iterator loadPak(const std::string &name);
 	virtual ClusterMap::iterator loadCluster(PakFile &pak, const FDirItem &entry, const ClusterKey &id);
 
+	///Called when IO operation is done
+	/**
+	 * Funcions loadPak and loadCluster can be called with unlocked mutex, because
+	 * they are thread safe until the onLoadDone is called. If you need to
+	 * benefit from paralel processing of the I/O operations, you
+	 * need to overwrite onLoadDone() and lock the mutex back.
+	 *
+	 * @note function can be called inside of catch handler
+	 */
+	virtual void onLoadDone() noexcept {}
+
 
 
 
