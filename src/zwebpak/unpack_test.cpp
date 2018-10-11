@@ -23,7 +23,12 @@ int main(int argc, char *argv[]) {
 	zwebpak::PakManager pmanager("",16,16);
 	std::string ln;
 
-	std::string rev = pmanager.getRevision(argv[1]);
+	std::string rev;
+	if (!pmanager.getRevision(argv[1],rev))
+	{
+		std::cerr << "Archive open error" << std::endl;
+		return 2;
+	}
 	std::cerr << "Opened revision: " << rev << std::endl;
 
 	while (!!std::cout) {

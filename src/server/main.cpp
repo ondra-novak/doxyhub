@@ -21,6 +21,10 @@
 #include "initdb.h"
 #include "bldcontrol.h"
 
+#include "upload.h"
+
+
+
 int main(int argc, char **argv) {
 	using namespace doxyhub;
 	using namespace simpleServer;
@@ -54,6 +58,10 @@ int main(int argc, char **argv) {
 		NetAddr addr = NetAddr::create(cfg.bind,8800,NetAddr::IPvAll);
 
 		SiteServer page_sources(cfg.storage_path, cfg.pakCacheCnt, cfg.clusterCacheCnt);
+		UploadHandler upload(builderdb, cfg.storage_path, [&](auto &&a) {
+			page_sources.updateArchive(a);
+		});
+
 
 		RpcHttpServer serverObj(addr, asyncProvider);
 		RpcHttpServer::Config scfg;
