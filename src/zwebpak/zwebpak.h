@@ -138,7 +138,13 @@ public:
 
 
 	///Retrieves revision string (short revision) of this webpak
-	std::string getRevision(const std::string &pakName);
+	/**
+	 * @param pakName name of the archive
+	 * @param rev the string receives revision
+	 * @retval true success
+	 * @retval false unable to open archive (or parse error)
+	 */
+	bool getRevision(const std::string &pakName, std::string &rev);
 
 	using PakMap = std::map<std::string, PPakFile>;
 	using PakID = const std::string *;

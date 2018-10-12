@@ -36,6 +36,10 @@ bool SiteServer::create_etag(const std::string &pakfile, const StrViewA &path, s
 	return true;
 }
 
+void SiteServer::updateArchive(const std::string& name) {
+	std::unique_lock<std::mutex> _(mx);
+	invalidate(name);
+}
 
 void SiteServer::redirect(HTTPRequest req, std::size_t vpathSize, const StrViewA &file, const StrViewA &rev, const StrViewA &path, bool permanent) {
 
@@ -71,7 +75,15 @@ bool SiteServer::serve(HTTPRequest req, StrViewA vpath) {
 	std::unique_lock<std::mutex> _lock(mx);
 	reqcounter++;
 
-	std::string currev = getRevision(file);
+	std::string currev;
+	if (! getRevision(file,currev)) {
+		if (handler404)
+			return handler404(req, vpath);
+		else
+			req.sendErrorPage(404);
+		return true;
+	}
+
 	if (!currev.empty() && rev != StrViewA(currev)) {
 		redirect(req, vpath.length,file, StrViewA(currev),path, !rev.empty() && !path.empty());
 		return true;
@@ -130,4 +142,9 @@ void SiteServer::onLoadDone() noexcept {
 	mx.lock();
 }
 
+void doxyhub::SiteServer::set404Handler(HTTPMappedHandler h) {
+	handler404 = h;
+}
+
 } /* namespace doxyhub */
+

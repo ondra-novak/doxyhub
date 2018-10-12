@@ -394,13 +394,14 @@ bool PakManager::Data::is_valid() const {
 	return owner != nullptr;
 }
 
-std::string PakManager::getRevision(const std::string& pakName) {
+bool PakManager::getRevision(const std::string& pakName, std::string &rev) {
 	auto i1 = pakMap.find(pakName);
 	if (i1 == pakMap.end()) i1 = loadPak(pakName);
-	if (i1 == pakMap.end()) return std::string();
+	if (i1 == pakMap.end()) return false;
 
 	i1->second.used = true;
-	return i1->second.object->getRevision();
+	rev = i1->second.object->getRevision();
+	return true;
 }
 
 
