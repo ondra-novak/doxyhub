@@ -32,6 +32,8 @@ public:
 	std::size_t pakCacheCnt;
 	std::size_t clusterCacheCnt;
 
+	std::string console_documentRoot;
+
 	void parse(const std::string &name);
 
 protected:

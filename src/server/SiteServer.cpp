@@ -56,18 +56,17 @@ bool SiteServer::serve(HTTPRequest req, StrViewA vpath) {
 
 	QueryParser qp(vpath);
 
-	auto m = req.getMethod();
-	if (m != "GET" && m != "HEAD") {
-		req.sendResponse(HTTPResponse(405)
-						("Allow","GET, HEAD"),"");
-		return true;
-	}
-
 	auto splt = qp.getPath().split("/",3);
 	splt();
 	std::string file = splt();
 	StrViewA rev = splt();
 	StrViewA path = splt();
+
+	if (rev == "console")
+		return console.serve(file, req, vpath.substr(file.length()+rev.length+2));
+
+	if (!req.allowMethods({"HEAD","GET"}))
+		return true;
 
 	std::string new_etag;
 	HeaderValue match_etag = req["If-None-Match"];
@@ -77,10 +76,7 @@ bool SiteServer::serve(HTTPRequest req, StrViewA vpath) {
 
 	std::string currev;
 	if (! getRevision(file,currev)) {
-		if (handler404)
-			return handler404(req, vpath);
-		else
-			req.sendErrorPage(404);
+		redirect(req, vpath.length,file,"console","index.html",false);
 		return true;
 	}
 
@@ -138,12 +134,14 @@ SiteServer::ClusterMap::iterator SiteServer::loadCluster(zwebpak::PakFile& pak,
 	return zwebpak::PakManager::loadCluster(pak, entry, id);
 }
 
-void SiteServer::onLoadDone() noexcept {
-	mx.lock();
+SiteServer::SiteServer(ConsolePage& console, const std::string& rootPath,
+		unsigned int pakCacheCnt, unsigned int clusterCacheCnt)
+:zwebpak::PakManager(rootPath, pakCacheCnt, clusterCacheCnt),console(console)
+{
 }
 
-void doxyhub::SiteServer::set404Handler(HTTPMappedHandler h) {
-	handler404 = h;
+void SiteServer::onLoadDone() noexcept {
+	mx.lock();
 }
 
 } /* namespace doxyhub */

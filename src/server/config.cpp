@@ -52,6 +52,10 @@ void ServerConfig::parse(const std::string& name) {
 	storage_path = storage.mandatory["storage_path"].getPath();
 	pakCacheCnt = storage.mandatory["site_cache_items"].getUInt();
 	clusterCacheCnt = storage.mandatory["cluster_cache_items"].getUInt();
+
+	const IniConfig::KeyValueMap &console = cfg["console"];
+	console_documentRoot = console.mandatory["document_root"].getPath();
+
 }
 
 

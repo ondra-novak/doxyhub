@@ -10,8 +10,9 @@
 #include <couchit/document.h>
 #include <imtjson/stringview.h>
 #include <imtjson/value.h>
-#include <shared/shared_state.h>
-#include <simpleServer/src/simpleServer/http_headervalue.h>
+#include <shared/shared_function.h>
+#include <simpleServer/asyncProvider.h>
+#include <simpleServer/http_headervalue.h>
 #include "upload.h"
 
 using couchit::CouchDB;
@@ -24,36 +25,15 @@ using simpleServer::HTTPRequest;
 namespace doxyhub {
 
 
+using namespace simpleServer;
+using namespace ondra_shared;
+
 UploadHandler::UploadHandler(couchit::CouchDB& builderDB,
 		const std::string& storage_path, const Notify &onUpdate)
 	:db(builderDB),storage_path(storage_path),onUpdate(onUpdate)
 {
 }
 
-class Download: public ondra_shared::SharedState::Object {
-public:
-	Download(const std::string &file, std::function<void()> finalize)
-	:file(file)
-	,tmp_file(file+".part")
-	,f(tmp_file, std::ios::out|std::ios::binary|std::ios::trunc)
-	,finalize(finalize) {}
-
-	void operator()(HTTPRequest req) {
-		auto buffer = req.getUserBuffer();
-		if (buffer.empty()) {
-			f.close();
-			rename(tmp_file.c_str(), file.c_str());
-			finalize();
-		} else {
-			f.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
-		}
-	}
-
-protected:
-	std::string file,tmp_file;
-	std::ofstream f;
-	std::function<void()> finalize;
-};
 
 
 bool UploadHandler::serve(simpleServer::HTTPRequest req,
@@ -88,13 +68,35 @@ bool UploadHandler::serve(simpleServer::HTTPRequest req,
 
 	std::string fullPath = storage_path;
 	fullPath.append(key.data, key.length);
+	std::string tmpPath = fullPath+".part"+db.genUID().toString().c_str();
+
+
+	auto stream = req.getBodyStream();
+
 
 	auto finalize = [upfn = Notify(onUpdate), key = std::string(key)]() {
 		upfn(key);
 	};
 
-	req.readBodyAsync(static_cast<std::size_t>(-1),
-			ondra_shared::SharedState::make<Download>(fullPath, finalize));
+	using SharedFn = shared_function<void(AsyncState, BinaryView)>;
+	auto copyfn = [=,f=std::ofstream(tmpPath, std::ios::out|std::ios::binary|std::ios::trunc)]
+				   (SharedFn fn, AsyncState st, BinaryView data)mutable{
+
+		if (st == asyncOK) {
+			StrViewA str(data);
+			f.write(str.data, str.length);
+			stream.readAsync(fn);
+		} else if (st == asyncEOF) {
+			f.close();
+			rename(tmpPath.c_str(), fullPath.c_str());
+			req.sendResponse("text/plain","",204);
+			finalize();
+		} else {
+			remove(tmpPath.c_str());
+		}
+	};
+
+	stream.readAsync(SharedFn(std::move(copyfn)));
 
 	return true;
 }

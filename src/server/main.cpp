@@ -15,13 +15,16 @@
 #include <simpleServer/address.h>
 #include <rpc/rpcServer.h>
 #include <couchit/couchDB.h>
+#include <simpleServer/query_parser.h>
 #include "SiteServer.h"
+#include "consolePage.h"
 
 
 #include "initdb.h"
 #include "bldcontrol.h"
 
 #include "upload.h"
+#include "search.h"
 
 
 
@@ -29,6 +32,7 @@ int main(int argc, char **argv) {
 	using namespace doxyhub;
 	using namespace simpleServer;
 	using namespace couchit;
+	using namespace json;
 	using namespace ondra_shared;
 
 
@@ -57,7 +61,9 @@ int main(int argc, char **argv) {
 		AsyncProvider asyncProvider = ThreadPoolAsync::create(cfg.server_threads, cfg.server_dispatchers);
 		NetAddr addr = NetAddr::create(cfg.bind,8800,NetAddr::IPvAll);
 
-		SiteServer page_sources(cfg.storage_path, cfg.pakCacheCnt, cfg.clusterCacheCnt);
+		ConsolePage consolePage(builderdb, cfg.console_documentRoot, cfg.upload_url);
+
+		SiteServer page_sources(consolePage, cfg.storage_path, cfg.pakCacheCnt, cfg.clusterCacheCnt);
 		UploadHandler upload(builderdb, cfg.storage_path, [&](auto &&a) {
 			page_sources.updateArchive(a);
 		});
@@ -75,6 +81,21 @@ int main(int argc, char **argv) {
 		serverObj.add_ping("ping");
 		serverObj.addPath("/docs", [&](const HTTPRequest &req, const StrViewA &vpath) {
 			return page_sources.serve(req, vpath);
+		});
+		serverObj.addPath("/upload",[&](const HTTPRequest &req, const StrViewA &vpath) {
+			return upload.serve(req, vpath);
+		});
+		serverObj.addPath("/search",[&](HTTPRequest req, const StrViewA &vpath) mutable {
+			if (req.allowMethods({"HEAD","GET"})) {
+				QueryParser qp(vpath);
+				for (auto &&kv : qp) {
+					if (kv.first == "q") {
+						Value res = searchStatusByUrl(builderdb,kv.second);
+						req.sendResponse("application/json",res.stringify());
+					}
+				}
+			}
+			return true;
 		});
 
 		BldControl bldcont(builderdb);

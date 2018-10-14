@@ -15,17 +15,25 @@
 #include <simpleServer/http_filemapper.h>
 #include <simpleServer/http_pathmapper.h>
 
+
+#include "consolePage.h"
+
 namespace doxyhub {
 
 using ondra_shared::StrViewA;
 using simpleServer::HTTPRequest;
 using simpleServer::HTTPMappedHandler;
 
+
+
+
 class SiteServer: public zwebpak::PakManager  {
 public:
-	using zwebpak::PakManager::PakManager;
 
-	void set404Handler(HTTPMappedHandler h);
+
+	SiteServer(ConsolePage &console, const std::string &rootPath
+			,unsigned int pakCacheCnt,unsigned int clusterCacheCnt);
+
 
 
 	bool serve(HTTPRequest req, StrViewA vpath);
@@ -33,7 +41,7 @@ public:
 protected:
 	static simpleServer::HttpFileMapper mimesrc;
 	std::mutex mx;
-	HTTPMappedHandler handler404;
+	ConsolePage &console;
 
 	bool create_etag(const std::string &pakfile, const StrViewA &path, std::string &etag);
 	void redirect(HTTPRequest req, std::size_t vpathSize, const StrViewA &file, const StrViewA &rev, const StrViewA &path, bool permanent);
@@ -47,6 +55,8 @@ protected:
 	std::size_t pak_miss = 0;
 	std::size_t cluster_miss = 0;
 
+
+	void runConsole(const StrViewA &file, HTTPRequest req, StrViewA path);
 
 };
 
