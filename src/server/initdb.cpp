@@ -46,7 +46,8 @@ function(doc) {
 
 		if (begins(url,"https://")) url= url.substr(8);
 		else if (begins(url,"http://")) url = url.substr(7);
-		
+		if (begins(url,"www.")) url = url.substr(4);
+
 		if (ends(url,".git")) url = url.substr(0,url.length-4);
 		url = url.toLowerCase();
 		emit(url);

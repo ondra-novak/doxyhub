@@ -2,8 +2,15 @@
 
 
 body {
-	font-size: 0.4cm;
+	font-size: 0.5cm;
 	font-family: sans-serif;
+	transition: all 1s;
+}
+
+
+h1 {
+	text-align: center;
+	margin: 0.4em;
 }
 
 body.status.unknown,body.status.deleted {
@@ -23,3 +30,194 @@ body.status.queued {
 body.status.error {
 	background-color: #FFCCCC;	
 }
+
+dh-overview {
+	display: table;
+	width: 100%;
+	box-sizing: border-box;	
+}
+
+dh-overview dh-row {
+	display: table-row;
+}
+dh-overview dh-caption,dh-overview dh-field {
+	display: table-cell;
+	padding: 0.2em;
+	max-width: 0;
+}
+dh-overview dh-field {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	width:50%;
+	text-align: left;
+}
+
+dh-overview dh-caption {
+	width:50%;
+	text-align: right;
+	font-weight: bold;
+}
+
+dh-controlbox {
+	border-top: 1px solid;
+	margin-top: 1em;
+	padding-top: 1em;
+	display: block;
+	text-align: center;
+	box-sizing: border-box;
+	
+}
+
+dh-controlbox button {
+	display:block;
+	margin: 1em auto 1em auto;	
+}
+
+dh-controlbox {
+	max-height: 0;
+	overflow-y: hidden;
+	margin-top: 0;
+	transition: all 1s;
+	opacity: 0;
+	position:relative;
+}
+
+body.status.building dh-controlbox.when_building,
+body.status.done dh-controlbox.when_done,
+body.status.error dh-controlbox.when_error,
+body.status.queued dh-controlbox.when_queued,
+body.status.unknown dh-controlbox.when_unknown,
+body.status.deleted dh-controlbox.when_delete,
+body dh-controlbox.always {
+	max-height: 10em;
+	margin-top: 1em;
+	opacity: 1; 
+}
+button.when {
+	height: 0;
+	transition: all 1s;
+	overflow-y: hidden;
+	opacity: 0;
+}
+
+dh-status {
+	display: block;
+	font-size: 2cm;
+	font-style: italic;
+	font-weight: bold;
+	opacity: 0.3;
+	position: absolute;
+	left:0;
+	right: 0;
+	top: 0.3cm;
+}
+
+
+body.status.building button.when.bulding,
+body.status.done button.when.done,
+body.status.error button.when.error,
+body.status.queued button.when.qeued,
+body.status.unknown button.when.unknown,
+body.status.deleted button.when.deleted {
+	height: 2em;
+	opacity: 100;
+}
+
+.gears {
+   /* width: 350px; */
+   /* margin: 100px auto; */
+   display: block;
+   p: center;
+   font-weight: bold;
+   font-family: Arial;
+   color: #fff;
+   text-shadow: 1px 1px 2px #5F868A;
+   vertical-align: baseline;
+}
+
+.gears .big {
+   width: 2cm;
+   height: 2cm;
+   /* margin-right: -6px; */
+   transform-origin: center;
+   animation: rotate 1.5s linear infinite;
+}
+
+.gears .small {
+   width: 1.3cm;
+   height: 1.3cm;
+   margin-left: -0.2cm;
+   transform-origin: center;
+   animation: reverseRotate 1.5s linear infinite;
+}
+
+
+@keyframes rotate {
+   0% {
+      transform: rotate(0);
+   }
+   100% {
+      transform: rotate(180deg);
+   }
+}
+
+@keyframes reverseRotate {
+   0% {
+      transform: rotate(180deg);
+   }
+   100% {
+      transform: rotate(0);
+   }
+}
+
+.loader {
+  width: 15cm;
+  height: 2cm;
+  line-height: 50px;
+  text-align: center;
+  position: relative;
+  /* top: 50%; */
+  /* left: 50%; */
+  /* transform: translate(-50%, -50%); */
+  margin: auto;
+}
+.loader::before, .loader::after {
+  content: "";
+  display: block;
+  width: 15px;
+  height: 15px;
+  background: #CC4;
+position: absolute;
+  }
+.loader::before{
+          animation: load .5s infinite alternate ease-in-out;
+}
+.loader::after{
+	animation: load 0.6s infinite alternate  ease-in-out;
+}
+.loader::before {
+  top: 0;
+  border-radius: 0.3cm;
+}
+.loader::after {
+  bottom: 0;
+  border-radius: 0.3cm;
+}
+
+
+@keyframes load {
+  0% {
+    left: 0;
+    height: 1cm;
+    width: 0.2cm;
+  }
+  50% {
+    height: 0.1cm;
+    width: 2cm;
+  }
+  100% {
+    left: 14.2cm;
+    height: 1.0cm;
+    width: 0.2cm;
+  }

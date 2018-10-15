@@ -17,6 +17,7 @@ String normalizeUrl(StrViewA url) {
 	if (url.begins("http://")) url = url.substr(7);
 	else if (url.begins("https://")) url = url.substr(8);
 
+	if (url.begins("www.")) url = url.substr(4);
 	if (url.ends(".git")) url = url.substr(0,url.length-4);
 	return String(url.length, [&](char *beg) {
 		char *c = beg;

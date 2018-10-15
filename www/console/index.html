@@ -4,10 +4,57 @@
 <meta charset="UTF-8">
 <title>Insert title here</title>
 <link href="index.css" rel="stylesheet" type="text/css" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body onload="start()">
-<h1>Console</h1>
+<h1>DoxyHUB console</h1>
+<dh-overview>
+<dh-row>
+<dh-caption>Project URL:</dh-caption>
+<dh-field id="field_url">http:://www.github.com/bitcoin/bitcoin.git</dh-field>
+</dh-row>
+<dh-row>
+<dh-caption>Project ID:</dh-caption>
+<dh-field id="field_id">7646548</dh-field>
+</dh-row>
+<dh-row>
+<dh-caption>Last revision HASH:</dh-caption>
+<dh-field id="field_rev">wqwsqwdqwq</dh-field>
+</dh-row>
+<dh-row class="large">
+<dh-caption>Status:</dh-caption>
+<dh-field id="field_status">BUILDING</dh-field>
+</dh-row>
+</dh-overview>
 
+<dh-controlbox class="when_queued">
+<div class="loader"></div>
+<dh-status id="current_status">Queued</dh-status>
+<p >Estimated time: <span name="est_time"></span></p>
+<dh-progress><div name="progress_pos"></div></dh-progress>
+</dh-controlbox>
+<dh-controlbox class="when_building">
+<div class="gears">
+   <img src="https://goo.gl/fpC7Oh" alt="gear" class="big">
+   <img src="https://goo.gl/qL1pnV" alt="gear" class="small">
+</div>
+<dh-status class="building">Bulding</dh-status>
+<p >Estimated time: <span name="est_time"></span></p>
+<dh-progress><div name="progress_pos"></div></dh-progress>
+</dh-controlbox>
+<dh-controlbox class="when_done">
+<dh-status id="current_status">Success!</dh-status>
+<button id="open_doc">Open</button>
+</dh-controlbox>
+<dh-controlbox class="when_error">
+<dh-status id="current_status">Error!</dh-status>
+<p >Error message: <span id="err_msg"></span></p>
+</dh-controlbox>
+<dh-controlbox class="always">
+<button id="build_button" class="when error unknown deleted done">Build now</button>
+<button id="show_log_button"  class="when error done">Show build logs</button>
+<label><input type="checkbox" id="keep_console_open"> Keep console open </label>
+</dh-controlbox>
 
 <script type="text/javascript" src="index.js"></script>
 </body>
