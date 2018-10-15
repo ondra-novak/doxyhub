@@ -1,0 +1,25 @@
+@CHARSET "UTF-8";
+
+
+body {
+	font-size: 0.4cm;
+	font-family: sans-serif;
+}
+
+body.status.unknown,body.status.deleted {
+	background-color: #CCCCCC;
+}
+
+body.status.done {
+	background-color: #CCFFCC;
+	
+}
+body.status.building {
+	background-color: #CCCCFF;
+}
+body.status.queued {
+	background-color: #FFFFCC;	
+}
+body.status.error {
+	background-color: #FFCCCC;	
+}

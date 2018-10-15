@@ -75,15 +75,7 @@ void Queue::processChange(const ChangeEvent &doc) {
 			);
 			auto startTime = std::chrono::system_clock::now();
 
-			if (curDoc["status"] == "delete") {
-				bld.deleteDoc(curDoc.getID());
-				curDoc.unset("disksize");
-				curDoc.unset("build_rev");
-				curDoc.unset("error");
-				curDoc.deleteAttachment("stdout");
-				curDoc.deleteAttachment("stderr");
-				curDoc.set("status","deleted");
-			} else if (curDoc["status"] == "queued") {
+			if (curDoc["status"] == "queued") {
 				curDoc.set("status","building");
 				curDoc.unset("error");
 				curDoc.object("build_time").set("start",(std::size_t)std::chrono::system_clock::to_time_t(startTime));
@@ -93,7 +85,6 @@ void Queue::processChange(const ChangeEvent &doc) {
 							curDoc.getID(), curDoc["build_rev"].getString(),
 							curDoc["upload_url"].getString(),
 							curDoc["upload_token"].getString());
-					curDoc.set("disksize", bld.calcSize(curDoc.getID()));
 					curDoc.set("status","done");
 					curDoc.unset("error");
 					curDoc.set("build_rev", StrViewA(bld.revision));

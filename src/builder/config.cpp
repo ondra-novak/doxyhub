@@ -40,7 +40,6 @@ void Config::parse(const std::string& name) {
 	dbconfig.databaseName = database.mandatory["dbname"].getString();
 
 	const IniConfig::KeyValueMap &generate = cfg["generate"];
-	output = generate.mandatory["output"].getPath();
 	working= generate.mandatory["working"].getPath();
 	doxyfile = generate.mandatory["doxyfile"].getPath();
 	queueId = generate.mandatory["queue_id"].getString();

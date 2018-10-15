@@ -43,6 +43,4 @@ Makefile
 #eclipse
 .settings
 
-/www
-/tmp
-/instance
+/run

@@ -23,7 +23,6 @@ public:
 
 	couchit::Config dbconfig;
 
-	std::string output;
 	std::string working;
 	std::string doxyfile;
 	std::string queueId;

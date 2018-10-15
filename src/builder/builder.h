@@ -28,8 +28,6 @@ public:
 				  const std::string &upload_url,
 				  const std::string &upload_token
 				  );
-	void deleteDoc(const std::string &output_name);
-	std::size_t calcSize(const std::string &output_name);
 
 	void prepareDoxyfile(const std::string &source, const std::string &target, const std::string &buildPath, const std::string &url);
 

@@ -197,16 +197,14 @@ void Builder::buildDoc(const std::string& url,
 	this->warnings.clear();
 	if (curRev == revision) return;
 
-	std::string path = cfg.output +"/"+ output_name;
+	std::string path = cfg.working +"/"+ output_name;
 	std::string newpath = path+"_new";
 
 	recursive_erase(cfg.working);
 	makeDir(cfg.working);
-	std::string priv = cfg.working+"/private";
 	std::string unpack = cfg.working+"/unpack";
 	std::string build = cfg.working+"/build";
 	std::string build_html = build+"/html";
-	makeDir(priv);
 	makeDir(unpack);
 	makeDir(build);
 
@@ -272,26 +270,6 @@ static StrViewA extractNameFromURL(StrViewA url) {
 
 }
 
-void Builder::deleteDoc(const std::string& output_name) {
-	std::string path = cfg.output +"/" + output_name;
-	recursive_erase(path);
-}
-
-std::size_t Builder::calcSize(const std::string& output_name) {
-	std::string path = cfg.output +"/" + output_name;
-	std::size_t size = 0;
-	WalkDir::walk_directory(path,true,
-			[&size](const std::string &path, WalkDir::WalkEvent ev){
-		if (ev == WalkDir::file_entry) {
-			struct stat st;
-			if (lstat(path.c_str(), &st) == 0) {
-				size += st.st_size;
-			}
-		}
-		return true;
-	});
-	return size;
-}
 
 void Builder::prepareDoxyfile(const std::string& source,const std::string& target, const std::string &buildPath, const std::string &url) {
 
