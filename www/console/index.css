@@ -155,6 +155,7 @@ dh-bottompanel {
 	padding-top: 0.3em;
 	box-sizing: border-box;
 	box-shadow: 0 0 1em rgb(0,0,0,0.5);
+	background: linear-gradient(to bottom, #c3b3b3 0%,#bba1a1 43%,#9a8476 87%);
 }
 
 dh-anchor {
@@ -163,4 +164,9 @@ dh-anchor {
 	position:relative;
 	vertical-align: top;
 	height: 1em;
+}
+
+dh-controlbox dh-progress {
+	margin-top: 1rem;
+	margin-bottom: 1rem;
 }

@@ -29,14 +29,17 @@
 </dh-row>
 </dh-overview>
 
+
 <dh-controlbox class="when_queued">
 <dh-lightbox></dh-lightbox>
 <dh-status id="current_status"><dh-anchor>
-<div class="queued-spinner">
-	<div class="e-loadholder">
-    	<div class="m-loader"><div class="e-text"></div></div>
-	</div>
-</div>
+<dh-qspin>
+<div class="a"></div>
+<div class="b"></div>
+<div class="c"></div>
+<div class="d"></div>
+<div class="e"></div>
+</dh-qspin>
 </dh-anchor>Queued</dh-status>
 <p >Estimated time: <span name="est_time"></span></p>
 <dh-progress><div name="progress_pos"></div></dh-progress>
@@ -49,8 +52,7 @@
    <img src="https://goo.gl/fpC7Oh" alt="gear" class="big">
    <img src="https://goo.gl/qL1pnV" alt="gear" class="small">
 </div>
-</dh-anchor>Bulding</dh-status>
-<p >Estimated time: <span name="est_time"></span></p>
+</dh-anchor>Building</dh-status>
 <dh-progress><div name="progress_pos"></div></dh-progress>
 </dh-controlbox>
 <dh-controlbox class="when_done">
@@ -63,7 +65,7 @@
 <dh-status id="current_status">Error!</dh-status>
 <p >Error message: <span id="err_msg"></span></p>
 </dh-controlbox>
-<dh-bottompanel class="background">
+<dh-bottompanel>
 <div>
 <button id="build_button" class="when error unknown deleted done">Build now</button>
 <button id="show_log_button"  class="when error done">Show build logs</button>

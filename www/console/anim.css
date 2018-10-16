@@ -112,113 +112,129 @@ position: absolute;
   }
 }
 
-  
-@keyframes outerRotate1 {
-  0% {
-    transform: translate(-50%, -50%) rotate(0);
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-@keyframes outerRotate2 {
-  0% {
-    transform: translate(-50%, -50%) rotate(0);
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(-360deg);
-  }
+@keyframes qspin_rota {
+	0% {
+	   transform: rotate(0deg);
+	}
+    100% {
+       transform: rotate(3600deg);
+    }
 }
 
-.e-loadholder {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-51%, -50%);
-  width: 1.5cm;
-  height: 1.5cm;
-  border: 5px solid #1B5F70;
-  border-radius: 120px;
-  box-sizing: border-box;
+@keyframes qspin_rotb {
+    0% {
+       transform: rotate(0deg);
+    }
+    100% {
+       transform: rotate(360deg);
+    }
 }
-.e-loadholder:after {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-51%, -50%);
-  content: " ";
-  display: block;
-  transform-origin: center;
-  z-index: 0;
+
+dh-qspin {
+    position: absolute;
+    right: 0.6cm;
+    top: 0;
+    width: 1.5cm;
+    height: 1.5cm;
 }
-.e-loadholder:after {
-  width: 1cm;
-  height: 200%;
-  animation: outerRotate2 30s infinite linear;
+
+dh-qspin div {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-radius: 50%;
+    border: 0.2cm solid rgb(0,0,0,0.0);
+    
 }
-.e-loadholder .m-loader {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-51%, -50%);
-  width: 1.5cm;
-  height: 1.5cm;
-  color: #888;
-  text-align: center;
-  border-top: 5px solid #2a93ae;
-  border-radius: 0.7cm;
-  box-sizing: border-box;
-  z-index: 20;
-  text-transform: uppercase;
+dh-qspin div.a {
+	border-top: 0.2cm solid #844;
+    width: 1.5cm;
+    height: 1.5cm;
+    animation: qspin_rota 15s infinite alternate  ease-in-out;
 }
-.e-loadholder .m-loader:after {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-51%, -50%);
-  content: " ";
-  display: block;
-  transform-origin: center;
-  z-index: -1;
+
+dh-qspin div.e {
+    border-top: 0.2cm solid #844;
+    width: 1.5cm;
+    height: 1.5cm;
+    animation: qspin_rotb 3s infinite reverse  linear;
 }
-.e-loadholder .m-loader:after {
-  width: 0.7cm;
-  height: 106%;
-  animation: outerRotate1 15s infinite linear;
+
+
+dh-qspin div.b {
+    left: 0.2cm;
+    top: 0.2cm;
+	border-top: 0.2cm solid #844;
+    width: 1.1cm;
+    height: 1.1cm;
+    animation: qspin_rotb 1s infinite linear;
 }
-.e-loadholder .m-loader .e-text {
-  line-height: 1cm;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-51%, -50%);
-  animation: textColour 1s alternate linear infinite;
-  display: block;
-  width: 1cm;
-  height: 1cm;
-  text-align: center;
-  border: 5px solid #3bb2d0;
-  border-radius: 0.5cm;
-  box-sizing: border-box;
-  z-index: 20;
+dh-qspin div.c {
+    left: 0.4cm;
+    top: 0.4cm;
+    border-top: 0.2cm solid #844;
+    border-right: 0.2cm solid #844;
+    width: .7cm;
+    height: .7cm;
+    animation: qspin_rota 12s infinite ease;
 }
-.e-loadholder .m-loader .e-text:before, .e-loadholder .m-loader .e-text:after {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-51%, -50%);
-  content: " ";
-  display: block;
-  transform-origin: center;
-  z-index: -1;
+dh-qspin div.d {
+    left: 0.4cm;
+    top: 0.4cm;
+    border-left: 0.2cm solid #844;
+    border-right: 0.2cm solid #844;
+    width: .7cm;
+    height: .7cm;
+    animation: qspin_rotb 2s infinite linear;
+
 }
-.e-loadholder .m-loader .e-text:before {
-  width: 110%;
-  height: 40px;
-  animation: outerRotate2 3.5s infinite linear;
+
+dh-progress {
+	display:block;
+	position:relative;
+	border: 1px solid;
+	box-shadow: 3px 3px 8px rgb(0,0,0,0.5) inset;
+	height: 0.5cm;
+	border-radius: 0.5cm;
+	max-width: 10cm;
+	margin-left: auto;
+	margin-right: auto;
+	overflow: hidden;
 }
-.e-loadholder .m-loader .e-text:after {
-  width: 0.7cm;
-  height: 110%;
-  animation: outerRotate1 8s infinite linear;
+
+dh-progress div {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 10%;
+	border-right: 1px solid;
+	border-left: 1px solid;
+	background: linear-gradient(to bottom, #b4e391 0%,#61c419 50%,#b4e391 100%);
+	box-shadow: 3px 3px 8px rgb(0,0,0,0.5);
+	transition: width 1s;
+}
+
+@keyframes progres_unknown {
+    0% {
+       left: 0;
+       right: 90%;
+    }
+    50% {
+       left: 90%;
+       right: 0;
+    }
+    100% {
+       left: 0;
+       right: 90%;
+    }
+}
+
+
+dh-progress div.unknown {
+    left: 0;
+    width: auto;
+    right: 90%;
+    animation: progres_unknown 2s infinite ;
+    transition: none;
 }
