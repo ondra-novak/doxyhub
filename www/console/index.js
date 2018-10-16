@@ -83,12 +83,15 @@ function start() {
 	
 	function extractUrlFromHash() {
 		var h = location.hash;
-		if (h.begins("#url=")) {
+		if (h.startsWith("#url=")) {
 			return decodeURIComponent(h.substr(5));
 		} else {
 			return "";
 		}
 	}
+	
+	
+	var cur_server_status;
 	
 	function statusFetch() {
 		fetch("api/status").then(function(res) {return res.json();})
@@ -129,20 +132,79 @@ function start() {
 			case "building":
 				setStatus("building");
 				statfld.innerText = "building";
-				setProgress("bprogress",Date.now()*100/data["build_time"].start, true);
+				setProgress("bprogress",(Date.now()-(data.build_time.start*1000))/(data.build_time.duration*10), true);
 				update_interval = 2000;
 				break;
 			}
 			
 			statusFetch.timerId = setTimeout(statusFetch, update_interval)
-			
+			cur_server_status = data;
 		});
 		
 		statusFetch.stop = function() {
-			cleanTimeout(statusFetch.timerId);
+			clearTimeout(statusFetch.timerId);
+		}
+		statusFetch.restart = function() {
+			statusFetch.stop();
+			statusFetch();
 		}
 	}
 	
 	statusFetch();
+	
+	function checkCaptcha() {
+		return Promise.resolve("zebra");
+	}
+	
+	function showError(x) {
+		statusFetch.stop();
+		setStatus("error");
+			document.querySelector("#err_msg").innerText = x;
+	}
+
+	function build_action() {
+		checkCaptcha().then(function(ccode) {
+			var url;
+			var data;
+			if (cur_server_status.status == "unknown") {
+				url = "api/create";
+				data = {
+						"url":cur_server_status.url,
+						"captcha":ccode,				
+				}
+			} else {
+				url = "api/build";
+				data = {
+						"captcha":ccode
+						};				
+			};
+			
+			fetch(url,{
+				method: "POST",
+				headers:{
+		            "Content-Type": "application/json"
+				},
+				body: JSON.stringify(data),
+			}).then(function(resp) {
+				if (resp.status == 200 || resp.status==201) {
+					resp.json().then(function(d){
+						if (d.redir) {
+							location.href = "../../"+d.id+"/";
+						} else {
+							statusFetch.restart();
+						}
+					});
+				} else if (resp.status == 202 || resp.status == 409) {
+					statusFetch.restart();					
+				} else {
+					showError(resp.status+" "+resp.statusText);
+				}
+			},function(err){
+					showError(err.toString());				
+			});
+		});		
+	}
+	
+	document.querySelector("#build_button").addEventListener("click",build_action);
 	
 }

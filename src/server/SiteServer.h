@@ -49,7 +49,6 @@ protected:
 
 	virtual PakMap::iterator loadPak(const std::string &name);
 	virtual ClusterMap::iterator loadCluster(zwebpak::PakFile &pak, const zwebpak::FDirItem &entry, const ClusterKey &id);
-	virtual void onLoadDone() noexcept;
 
 	std::size_t reqcounter = 0;
 	std::size_t pak_miss = 0;

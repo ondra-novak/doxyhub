@@ -167,10 +167,15 @@ void pack_files(const std::string &path, const std::string &file, const std::str
 		if (ev == WalkDir::file_entry) {
 			std::string fname =p.substr(path.length()+1);
 			files.push_back(fname);
-			logDebug("Packing file: $1", fname);
 		}
 		return true;
 	});
+
+	std::string manifest = path+"/manifest.txt";
+	std::ofstream m(manifest, std::ios::out|std::ios::trunc);
+	for(auto &&c:files) m << c << std::endl;
+	m.close();
+	files.push_back(manifest.substr(path.length()+1));
 
 	if (!zwebpak::packFiles(files, path+"/", file, revision, clusterSize)) {
 		throw std::runtime_error("Failed to pack files:" + file);

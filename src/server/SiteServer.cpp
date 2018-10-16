@@ -109,8 +109,8 @@ bool SiteServer::serve(HTTPRequest req, StrViewA vpath) {
 
 
 	HTTPResponse resp(200);
-	resp("ETag", new_etag);
-	resp("Cache-Control","max-age=31536000");
+	resp.eTag(new_etag);
+	resp.cacheForever();
 	resp.contentLength(d.length);
 	resp.contentType(mimesrc.mapMime(path));
 	auto stream = req.sendResponse(resp);
@@ -121,7 +121,6 @@ bool SiteServer::serve(HTTPRequest req, StrViewA vpath) {
 SiteServer::PakMap::iterator SiteServer::loadPak(const std::string& name) {
 	pak_miss++;
 	logProgress("Loading directory: $1  - cache miss ration $2/$3 ($4)", name, pak_miss, reqcounter, pak_miss*100.0/reqcounter);
-	mx.unlock();
 	return zwebpak::PakManager::loadPak(name);
 }
 
@@ -130,7 +129,6 @@ SiteServer::ClusterMap::iterator SiteServer::loadCluster(zwebpak::PakFile& pak,
 
 	cluster_miss++;
 	logProgress("Loading cluster: $1:$2  - cache miss ration $3/$4 ($5)", *id.first, id.second, cluster_miss, reqcounter, cluster_miss*100.0/reqcounter);
-	mx.unlock();
 	return zwebpak::PakManager::loadCluster(pak, entry, id);
 }
 
@@ -138,10 +136,6 @@ SiteServer::SiteServer(ConsolePage& console, const std::string& rootPath,
 		unsigned int pakCacheCnt, unsigned int clusterCacheCnt)
 :zwebpak::PakManager(rootPath, pakCacheCnt, clusterCacheCnt),console(console)
 {
-}
-
-void SiteServer::onLoadDone() noexcept {
-	mx.lock();
 }
 
 } /* namespace doxyhub */

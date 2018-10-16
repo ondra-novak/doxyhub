@@ -97,7 +97,7 @@ void ConsolePage::rebuild_project(couchit::Document doc, bool force) {
 	chdoc.set("status","queued");
 	chdoc.set("queue",selectQueue());
 	chdoc.set("upload_token",generate_token());
-	chdoc.set("upload_url",upload_url);
+	chdoc.set("upload_url",String({upload_url,"/",doc.getID()}));
 	if (force) chdoc.set("build_rev","");
 	db.put(chdoc);
 }
@@ -107,7 +107,7 @@ bool ConsolePage::checkUrl(StrViewA url) const {
 	if (url.begins("http://")) start = 7;
 	else if (url.begins("https://")) start = 8;
 	else return false;
-	auto sep = std::min(url.indexOf("/"), url.indexOf(":"));
+	auto sep = std::min(url.indexOf("/",start), url.indexOf(":",start));
 	if (sep == url.npos) return false;
 	auto beg = url.indexOf("@");
 	if (beg > sep) beg =  start;
@@ -242,7 +242,7 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 				captcha_code = options["captcha"].getString();
 				url = options["url"].toString();
 
-				if (checkCapcha(captcha_code)) {
+				if (!checkCapcha(captcha_code)) {
 					req.sendErrorPage(402);
 					return;
 				}
@@ -259,7 +259,8 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 
 				if (exist.defined()) {
 					response = Object("status","found")
-									("id",exist["_id"]);
+									("id",exist["_id"])
+									("redir", exist["_id"].getString() != projectId);
 					if (exist["status"] == "deleted") {
 						try {
 							rebuild_project(exist, false);
@@ -274,7 +275,8 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 					doc.set("url",url);
 					rebuild_project(doc,false);
 					response = Object("status","created")
-									 ("id",doc.getIDValue());
+									 ("id",doc.getIDValue())
+									("redir", doc.getID() != projectId);
 					code = 201;
 				}
 				req.sendResponse("application/json",response.stringify(),code);
