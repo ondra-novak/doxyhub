@@ -1,0 +1,224 @@
+.queued-spinner {
+	display:block;
+	position:absolute;
+	width: 1.5cm;
+	height: 1.5cm;
+	border: 1px solid;
+	right: 0;
+	top: 0;
+}
+
+.gears {
+   /* width: 350px; */
+   /* margin: 100px auto; */
+   display: inline-block;
+   p: center;
+   font-weight: bold;
+   font-family: Arial;
+   color: #fff;
+   text-shadow: 1px 1px 2px #5F868A;
+   vertical-align: baseline;
+   position:absolute; 
+   right:0;
+   width: 3cm;
+   white-space: nowrap;
+  
+}
+
+.gears .big {
+   width: 1.5cm;
+   height: 1.5cm;
+   /* margin-right: -6px; */
+   transform-origin: center;
+   animation: rotate 1.5s linear infinite;
+}
+
+.gears .small {
+   width: 1cm;
+   height: 1cm;
+   margin-left: -0.5cm;
+   transform-origin: center;
+   animation: reverseRotate 1.5s linear infinite;
+}
+
+
+@keyframes rotate {
+   0% {
+      transform: rotate(0);
+   }
+   100% {
+      transform: rotate(180deg);
+   }
+}
+
+@keyframes reverseRotate {
+   0% {
+      transform: rotate(180deg);
+   }
+   100% {
+      transform: rotate(0);
+   }
+}
+
+.loader {
+  width: 15cm;
+  height: 2cm;
+  line-height: 50px;
+  text-align: center;
+  position: relative;
+  /* top: 50%; */
+  /* left: 50%; */
+  /* transform: translate(-50%, -50%); */
+  margin: auto;
+}
+.loader::before, .loader::after {
+  content: "";
+  display: block;
+  width: 15px;
+  height: 15px;
+  background: #CC4;
+position: absolute;
+  }
+.loader::before{
+          animation: load .5s infinite alternate ease-in-out;
+}
+.loader::after{
+	animation: load 0.6s infinite alternate  ease-in-out;
+}
+.loader::before {
+  top: 0;
+  border-radius: 0.3cm;
+}
+.loader::after {
+  bottom: 0;
+  border-radius: 0.3cm;
+}
+
+
+@keyframes load {
+  0% {
+    left: 0;
+    height: 1cm;
+    width: 0.2cm;
+  }
+  50% {
+    height: 0.1cm;
+    width: 2cm;
+  }
+  100% {
+    left: 14.2cm;
+    height: 1.0cm;
+    width: 0.2cm;
+  }
+}
+
+  
+@keyframes outerRotate1 {
+  0% {
+    transform: translate(-50%, -50%) rotate(0);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+@keyframes outerRotate2 {
+  0% {
+    transform: translate(-50%, -50%) rotate(0);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+.e-loadholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-51%, -50%);
+  width: 1.5cm;
+  height: 1.5cm;
+  border: 5px solid #1B5F70;
+  border-radius: 120px;
+  box-sizing: border-box;
+}
+.e-loadholder:after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-51%, -50%);
+  content: " ";
+  display: block;
+  transform-origin: center;
+  z-index: 0;
+}
+.e-loadholder:after {
+  width: 1cm;
+  height: 200%;
+  animation: outerRotate2 30s infinite linear;
+}
+.e-loadholder .m-loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-51%, -50%);
+  width: 1.5cm;
+  height: 1.5cm;
+  color: #888;
+  text-align: center;
+  border-top: 5px solid #2a93ae;
+  border-radius: 0.7cm;
+  box-sizing: border-box;
+  z-index: 20;
+  text-transform: uppercase;
+}
+.e-loadholder .m-loader:after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-51%, -50%);
+  content: " ";
+  display: block;
+  transform-origin: center;
+  z-index: -1;
+}
+.e-loadholder .m-loader:after {
+  width: 0.7cm;
+  height: 106%;
+  animation: outerRotate1 15s infinite linear;
+}
+.e-loadholder .m-loader .e-text {
+  line-height: 1cm;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-51%, -50%);
+  animation: textColour 1s alternate linear infinite;
+  display: block;
+  width: 1cm;
+  height: 1cm;
+  text-align: center;
+  border: 5px solid #3bb2d0;
+  border-radius: 0.5cm;
+  box-sizing: border-box;
+  z-index: 20;
+}
+.e-loadholder .m-loader .e-text:before, .e-loadholder .m-loader .e-text:after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-51%, -50%);
+  content: " ";
+  display: block;
+  transform-origin: center;
+  z-index: -1;
+}
+.e-loadholder .m-loader .e-text:before {
+  width: 110%;
+  height: 40px;
+  animation: outerRotate2 3.5s infinite linear;
+}
+.e-loadholder .m-loader .e-text:after {
+  width: 0.7cm;
+  height: 110%;
+  animation: outerRotate1 8s infinite linear;
+}
