@@ -80,8 +80,9 @@ void Queue::processChange(const ChangeEvent &doc) {
 				curDoc.unset("error");
 				curDoc.object("build_time").set("start",(std::size_t)std::chrono::system_clock::to_time_t(startTime));
 				put_merge(curDoc);
+				bool r = false;
 				try {
-					bld.buildDoc(curDoc["url"].getString(),
+					r = bld.buildDoc(curDoc["url"].getString(),
 							curDoc.getID(), curDoc["build_rev"].getString(),
 							curDoc["upload_url"].getString(),
 							curDoc["upload_token"].getString());
@@ -103,10 +104,21 @@ void Queue::processChange(const ChangeEvent &doc) {
 				curDoc.inlineAttachment("stderr",AttachmentDataRef(
 						BinaryView(StrViewA(bld.warnings)),"text/plain"
 				));
-				auto endTime = std::chrono::system_clock::now();
-				curDoc.object("build_time")
-						.set("end",(std::size_t)std::chrono::system_clock::to_time_t(endTime))
-						.set("duration",std::chrono::duration_cast<std::chrono::seconds>(endTime-startTime).count());
+				if (r) {
+					auto endTime = std::chrono::system_clock::now();
+					auto dur = std::chrono::duration_cast<std::chrono::seconds>(endTime-startTime).count();
+					Value avrdur = curDoc["build_time"]["avg_duration"];
+					if (avrdur.defined()) {
+						avrdur = (avrdur.getUInt()*9+dur+5)/10;
+					} else {
+						avrdur = dur;
+					}
+					curDoc.object("build_time")
+							.set("end",(std::size_t)std::chrono::system_clock::to_time_t(endTime))
+							.set("duration",dur)
+							.set("avg_duration",avrdur);
+
+				}
 			}
 
 			logProgress("Build finished : doc=$1, url=$2, status=$3",

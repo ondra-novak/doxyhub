@@ -127,12 +127,13 @@ function start() {
 			case "queued":
 				setStatus("queued");
 				statfld.innerText = "queued";
-				update_interval = 5000;
+				update_interval = 2000;
 				break;
 			case "building":
 				setStatus("building");
 				statfld.innerText = "building";
-				setProgress("bprogress",(Date.now()-(data.build_time.start*1000))/(data.build_time.duration*10), true);
+				var dur = data.build_time.avg_duration?data.build_time.avg_duration:60;
+				setProgress("bprogress",(Date.now()-(data.build_time.start*1000))/(dur*10), true);
 				update_interval = 2000;
 				break;
 			}

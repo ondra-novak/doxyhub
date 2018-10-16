@@ -182,7 +182,7 @@ void pack_files(const std::string &path, const std::string &file, const std::str
 	}
 }
 
-void Builder::buildDoc(const std::string& url,
+bool Builder::buildDoc(const std::string& url,
 		const std::string& output_name,
 		const std::string &revision,
 		const std::string &upload_url,
@@ -200,7 +200,7 @@ void Builder::buildDoc(const std::string& url,
 	this->revision = curRev;
 	this->log.clear();
 	this->warnings.clear();
-	if (curRev == revision) return;
+	if (curRev == revision) return false;
 
 	std::string path = cfg.working +"/"+ output_name;
 	std::string newpath = path+"_new";
@@ -266,6 +266,7 @@ void Builder::buildDoc(const std::string& url,
 		throw std::runtime_error("Upload failed to url: " + upload_url);
 	}
 
+	return true;
 }
 
 static StrViewA extractNameFromURL(StrViewA url) {

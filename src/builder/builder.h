@@ -22,7 +22,7 @@ class Builder {
 public:
 	Builder(const Config &cfg, EnvVars envVars);
 
-	void buildDoc(const std::string &url,
+	bool buildDoc(const std::string &url,
 				  const std::string &output_name,
 				  const std::string &revision,
 				  const std::string &upload_url,
