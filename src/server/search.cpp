@@ -48,8 +48,9 @@ Value searchStatusByUrl(CouchDB &db, StrViewA url) {
 					 ("status","not_exists");
 
 	} else {
-		return Object("_id", x["_id"])
+		return Object("id", x["_id"])
 					 ("url",x["url"])
+					 ("rev",x["build_rev"])
 					 ("status",x["status"]);
 	}
 

@@ -13,19 +13,19 @@
 <dh-overview>
 <dh-row>
 <dh-caption>Project URL:</dh-caption>
-<dh-field id="field_url">http:://www.github.com/bitcoin/bitcoin.git</dh-field>
+<dh-field id="field_url"></dh-field>
 </dh-row>
 <dh-row>
 <dh-caption>Project ID:</dh-caption>
-<dh-field id="field_id">7646548</dh-field>
+<dh-field id="field_id"></dh-field>
 </dh-row>
 <dh-row>
 <dh-caption>Last revision HASH:</dh-caption>
-<dh-field id="field_rev">wqwsqwdqwq</dh-field>
+<dh-field id="field_rev"></dh-field>
 </dh-row>
 <dh-row class="large">
 <dh-caption>Status:</dh-caption>
-<dh-field id="field_status">BUILDING</dh-field>
+<dh-field id="field_status">Loading...</dh-field>
 </dh-row>
 </dh-overview>
 
@@ -42,18 +42,18 @@
 </dh-qspin>
 </dh-anchor>Queued</dh-status>
 <p >Estimated time: <span name="est_time"></span></p>
-<dh-progress><div name="progress_pos"></div></dh-progress>
+<dh-progress><div id="qprogress"></div></dh-progress>
 </dh-controlbox>
 <dh-controlbox class="when_building">
 <dh-lightbox></dh-lightbox>
 <dh-status class="building">
 <dh-anchor>
 <div class="gears">
-   <img src="https://goo.gl/fpC7Oh" alt="gear" class="big">
-   <img src="https://goo.gl/qL1pnV" alt="gear" class="small">
+   <img src="g1.png" alt="gear" class="big">
+   <img src="g2.png" alt="gear" class="small">
 </div>
 </dh-anchor>Building</dh-status>
-<dh-progress><div name="progress_pos"></div></dh-progress>
+<dh-progress><div id="bprogress"></div></dh-progress>
 </dh-controlbox>
 <dh-controlbox class="when_done">
 <dh-lightbox></dh-lightbox>
@@ -65,6 +65,7 @@
 <dh-status id="current_status">Error!</dh-status>
 <p >Error message: <span id="err_msg"></span></p>
 </dh-controlbox>
+</div>
 <dh-bottompanel>
 <div>
 <button id="build_button" class="when error unknown deleted done">Build now</button>
@@ -72,7 +73,6 @@
 </div>
 <label><input type="checkbox" id="keep_console_open"> Keep console open </label>
 </dh-bottompanel>
-</div>
 <script type="text/javascript" src="index.js"></script>
 </body>
 </html>

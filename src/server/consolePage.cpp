@@ -151,7 +151,7 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 				  ("url",doc["url"])
 				  ("status",doc["status"])
 				  ("last_error",doc["error"])
-				  ("revision",doc["revision"])
+				  ("rev",doc["build_rev"])
 				  ("build_time",doc["build_time"]);
 		}
 

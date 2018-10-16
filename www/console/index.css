@@ -134,7 +134,7 @@ dh-lightbox {
 	opacity: 0.2;
 }
 
-body.status.building button.when.bulding,
+body.status.building button.when.building,
 body.status.done button.when.done,
 body.status.error button.when.error,
 body.status.queued button.when.qeued,
@@ -147,7 +147,7 @@ body.status.deleted button.when.deleted {
 
 dh-bottompanel {
 	display:block;
-	position:absolute;
+	position: fixed;
 	left:0;
 	right:0;
 	bottom:0;
