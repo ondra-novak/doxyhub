@@ -83,9 +83,9 @@ public:
 };
 
 
-std::string Builder::get_git_last_revision(ExternalProcessWithLog &&git, const std::string &url) {
+std::string Builder::get_git_last_revision(ExternalProcessWithLog &&git, const std::string &url, const std::string &branch) {
 	AGuard _(activeTool, &git);
-	int res = git.execute({"ls-remote", url});
+	int res = git.execute({"ls-remote", url, branch});
 	if (res != 0) throw std::runtime_error("GIT:Cannot retrive last revision for url: " + url);
 	std::string rev;
 	std::istringstream in(git.output.str());
@@ -183,7 +183,7 @@ void pack_files(const std::string &path, const std::string &file, const std::str
 }
 
 bool Builder::buildDoc(const std::string& url,
-		const std::string& output_name,
+		const std::string& branch,
 		const std::string &revision,
 		const std::string &upload_url,
 		const std::string &upload_token) {
@@ -194,7 +194,7 @@ bool Builder::buildDoc(const std::string& url,
 	ExternalProcessWithLog curl(cfg.curl, envVars, cfg.activityTimeout, cfg.totalTimeout);
 
 
-	std::string curRev = get_git_last_revision(std::move(git), url);
+	std::string curRev = get_git_last_revision(std::move(git), url, branch);
 
 
 	this->revision = curRev;
@@ -202,8 +202,7 @@ bool Builder::buildDoc(const std::string& url,
 	this->warnings.clear();
 	if (curRev == revision) return false;
 
-	std::string path = cfg.working +"/"+ output_name;
-	std::string newpath = path+"_new";
+	std::string path = cfg.working +"/pack";
 
 	recursive_erase(cfg.working);
 	makeDir(cfg.working);
@@ -220,7 +219,7 @@ bool Builder::buildDoc(const std::string& url,
 
 	{
 		AGuard _(activeTool, &git);
-		res = git.execute({"clone","--progress","--depth","1",url,"."});;
+		res = git.execute({"clone","--progress","-b",branch,"--depth","1",url,"."});;
 	}
 	if (res != 0) {
 		this->log = git.output.str();

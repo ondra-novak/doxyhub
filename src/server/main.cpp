@@ -87,12 +87,22 @@ int main(int argc, char **argv) {
 		});
 		serverObj.addPath("/search",[&](HTTPRequest req, const StrViewA &vpath) mutable {
 			if (req.allowMethods({"HEAD","GET"})) {
+				String url;
+				String branch;
 				QueryParser qp(vpath);
 				for (auto &&kv : qp) {
-					if (kv.first == "q") {
-						Value res = searchStatusByUrl(builderdb,kv.second);
-						req.sendResponse("application/json",res.stringify());
+					if (kv.first == "url") {
+						url = kv.second;
 					}
+					if (kv.first == "branch") {
+						branch = kv.second;
+					}
+				}
+				if (url.empty() || branch.empty()) {
+					req.sendErrorPage(400);
+				} else {
+					Value res = searchStatusByUrl(builderdb,url, branch);
+					req.sendResponse("application/json",res.stringify());
 				}
 			}
 			return true;

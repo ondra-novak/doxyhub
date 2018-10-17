@@ -50,7 +50,7 @@ function(doc) {
 
 		if (ends(url,".git")) url = url.substr(0,url.length-4);
 		url = url.toLowerCase();
-		emit(url);
+		emit([url,doc.branch]);
 	}
 }
 

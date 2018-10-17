@@ -15,7 +15,7 @@ namespace doxyhub {
 
 
 
-json::String url2hash(const json::StrViewA &url);
+json::String url2hash(const json::StrViewA &url,const json::StrViewA &branch);
 
 } /* namespace doxyhub */
 

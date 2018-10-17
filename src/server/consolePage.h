@@ -41,8 +41,9 @@ protected:
 
 	void rebuild_project(couchit::Document doc, bool force);
 	bool checkUrl(StrViewA url) const;
-	Value checkExist(StrViewA url) const;
+	Value checkExist(StrViewA url, StrViewA branch) const;
 	bool checkCapcha(StrViewA capcha) const;
+	bool checkBranchName(StrViewA branch) const;
 };
 
 } /* namespace doxyhub */

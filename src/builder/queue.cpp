@@ -83,7 +83,8 @@ void Queue::processChange(const ChangeEvent &doc) {
 				bool r = false;
 				try {
 					r = bld.buildDoc(curDoc["url"].getString(),
-							curDoc.getID(), curDoc["build_rev"].getString(),
+							curDoc["branch"].getString(),
+							curDoc["build_rev"].getString(),
 							curDoc["upload_url"].getString(),
 							curDoc["upload_token"].getString());
 					curDoc.set("status","done");

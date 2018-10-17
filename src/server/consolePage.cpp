@@ -123,11 +123,26 @@ bool ConsolePage::checkUrl(StrViewA url) const {
 	return true;
 }
 
-Value ConsolePage::checkExist(StrViewA url) const {
+Value ConsolePage::checkExist(StrViewA url, StrViewA branch) const {
 
-	return searchByUrl(db,url);
+	return searchByUrl(db,url,branch);
 }
 
+bool ConsolePage::checkBranchName(StrViewA branch) const {
+	if (branch.empty() || branch == "@") return false;
+
+	char prevchar =0;
+	constexpr StrViewA specChars( "-_/<>.,|;{}!@#$%&()");
+	for(auto &&c : branch) {
+		if (!isalnum(c) && specChars.indexOf(StrViewA(&c,1)) == specChars.npos) return false;
+		if (c == '.' && (prevchar == '.' || prevchar == '/')) return false;
+		if (c == '{' && prevchar == '@') return false;
+		if (c == '/' && prevchar == '/') return false;
+		prevchar = c;
+	}
+	if (branch.ends(".lock") || branch.ends(".") || branch.begins("/") || branch.ends("/")) return false;
+	return true;
+}
 
 void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path) {
 
@@ -237,10 +252,13 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 				Value options;
 				StrViewA captcha_code;
 				String url;
+				String branch;
 
 				options = Value::fromString(StrViewA(BinaryView(buffer)));
 				captcha_code = options["captcha"].getString();
 				url = options["url"].toString();
+				branch = options["branch"].toString();
+
 
 				if (!checkCapcha(captcha_code)) {
 					req.sendErrorPage(402);
@@ -252,8 +270,13 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 					return;
 				}
 
+				if (!checkBranchName(branch)) {
+					req.sendErrorPage(400,StrViewA(),"Invalid branch name");
+					return;
+				}
 
-				Value exist = checkExist(url);
+
+				Value exist = checkExist(url,branch);
 				Value response;
 				int code;
 
@@ -271,8 +294,9 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 					code = 200;
 				} else {
 					Document doc;
-					doc.setID(url2hash(url));
+					doc.setID(url2hash(url,branch));
 					doc.set("url",url);
+					doc.set("branch",branch);
 					rebuild_project(doc,false);
 					response = Object("status","created")
 									 ("id",doc.getIDValue())

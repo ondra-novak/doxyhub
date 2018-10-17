@@ -23,7 +23,7 @@ public:
 	Builder(const Config &cfg, EnvVars envVars);
 
 	bool buildDoc(const std::string &url,
-				  const std::string &output_name,
+				  const std::string &branch,
 				  const std::string &revision,
 				  const std::string &upload_url,
 				  const std::string &upload_token
@@ -44,7 +44,7 @@ protected:
 	ActiveObject<ExternalProcess> activeTool;
 	typedef ActiveObject<ExternalProcess>::Guard AGuard;
 
-	std::string get_git_last_revision(ExternalProcessWithLog &&git, const std::string &url);
+	std::string get_git_last_revision(ExternalProcessWithLog &&git, const std::string &url, const std::string &branch);
 
 
 };

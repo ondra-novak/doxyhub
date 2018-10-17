@@ -28,30 +28,28 @@ String normalizeUrl(StrViewA url) {
 	});
 }
 
-Value searchByUrl(CouchDB &db, StrViewA url) {
+Value searchByUrl(CouchDB &db, StrViewA url, StrViewA branch) {
 
 	String norm_url = normalizeUrl(url);
 
 	Query q = db.createQuery(byURL);
-	q.key(norm_url);
+	q.key({norm_url,branch});
 	Result res = q.exec();
 	if (res.empty()) return Value();
 	else return Row(res[0]).doc;
 }
 
-Value searchStatusByUrl(CouchDB &db, StrViewA url) {
+Value searchStatusByUrl(CouchDB &db, StrViewA url, StrViewA branch) {
 
-	Value x = searchByUrl(db,url);
+	Value x = searchByUrl(db,url, branch);
 	if (!x.defined()) {
-		return Object("_id",url2hash(normalizeUrl(url)))
-					 ("url",url)
-					 ("status","not_exists");
+
+		return Object("_id",url2hash(normalizeUrl(url),branch))
+					 ("found",false);
 
 	} else {
 		return Object("id", x["_id"])
-					 ("url",x["url"])
-					 ("rev",x["build_rev"])
-					 ("status",x["status"]);
+					 ("found",true);
 	}
 
 }

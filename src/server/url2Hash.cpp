@@ -12,13 +12,15 @@
 
 namespace doxyhub {
 
-json::String url2hash(const json::StrViewA &url) {
+json::String url2hash(const json::StrViewA &url,const json::StrViewA &branch) {
 
 	using namespace json;
 
 	std::uint64_t hash;
 	FNV1a64 hasher(hash);
 	for (auto &&x:url) hasher(x);
+	hasher(1);
+	for (auto &&x:branch) hasher(x);
 
 	unsigned char bytes[8];
 	for (unsigned int i = 0; i < 8; i++) {

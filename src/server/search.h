@@ -17,8 +17,8 @@ using namespace couchit;
 
 
 String normalizeUrl(StrViewA url);
-Value searchByUrl(CouchDB &db, StrViewA url);
-Value searchStatusByUrl(CouchDB &db, StrViewA url);
+Value searchByUrl(CouchDB &db, StrViewA url, StrViewA branch);
+Value searchStatusByUrl(CouchDB &db, StrViewA url, StrViewA branch);
 
 }
 

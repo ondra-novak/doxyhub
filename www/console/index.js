@@ -81,14 +81,23 @@ function start() {
 	window.setProgressAutoTime = setProgressAutoTime;
 	
 	
-	function extractUrlFromHash() {
+	function parseHash() {
 		var h = location.hash;
-		if (h.startsWith("#url=")) {
-			return decodeURIComponent(h.substr(5));
+		if (h.startsWith("#")) {
+			parts = h.substr(1).split("&");
+			return parts.reduce(function(cur,item){
+				
+				var eq = item.indexOf('=');
+				var key = eq<0? item:item.substr(0,eq);
+				var value = item.substr(eq+1);
+				cur[decodeURIComponent(key)] = decodeURIComponent(value);
+				return cur;
+			},{});
 		} else {
-			return "";
+			return null;
 		}
 	}
+	
 	
 	
 	var cur_server_status;
@@ -99,7 +108,11 @@ function start() {
 			console.log(data);
 			var update_interval = 60000;
 			if (data["status"] == "unknown") {
-				data["url"] = extractUrlFromHash();
+				var tmp = parseHash();
+				if (tmp) {
+					data["url"] = tmp["url"];
+					data["branch"] = tmp["branch"];
+				}
 			}
 			document.querySelector("#field_url").innerText = data["url"];
 			document.querySelector("#field_id").innerText = data["id"];
@@ -171,6 +184,7 @@ function start() {
 				url = "api/create";
 				data = {
 						"url":cur_server_status.url,
+						"url":cur_server_status.branch,
 						"captcha":ccode,				
 				}
 			} else {
