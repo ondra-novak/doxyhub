@@ -84,7 +84,7 @@ function start() {
 	function parseHash() {
 		var h = location.hash;
 		if (h.startsWith("#")) {
-			parts = h.substr(1).split("&");
+			var parts = h.substr(1).split("&");
 			return parts.reduce(function(cur,item){
 				
 				var eq = item.indexOf('=');
@@ -115,7 +115,7 @@ function start() {
 				}
 			}
 			document.querySelector("#field_url").innerText = data["url"];
-			document.querySelector("#field_id").innerText = data["id"];
+			document.querySelector("#field_branch").innerText = data["branch"];
 			document.querySelector("#field_rev").innerText = data["rev"];
 			var statfld = document.querySelector("#field_status"); 
 			
@@ -184,7 +184,7 @@ function start() {
 				url = "api/create";
 				data = {
 						"url":cur_server_status.url,
-						"url":cur_server_status.branch,
+						"branch":cur_server_status.branch,
 						"captcha":ccode,				
 				}
 			} else {

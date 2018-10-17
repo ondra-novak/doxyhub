@@ -164,6 +164,7 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 		} else {
 			result("id", projectId)
 				  ("url",doc["url"])
+				  ("branch",doc["branch"])
 				  ("status",doc["status"])
 				  ("last_error",doc["error"])
 				  ("rev",doc["build_rev"])
