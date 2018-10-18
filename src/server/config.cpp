@@ -56,6 +56,8 @@ void ServerConfig::parse(const std::string& name) {
 	const IniConfig::KeyValueMap &console = cfg["console"];
 	console_documentRoot = console.mandatory["document_root"].getPath();
 
+	const IniConfig::KeyValueMap &homepage = cfg["hp"];
+	homepage_documentRoot = homepage.mandatory["document_root"].getPath();
 }
 
 

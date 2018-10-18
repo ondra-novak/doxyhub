@@ -33,6 +33,7 @@ public:
 	std::size_t clusterCacheCnt;
 
 	std::string console_documentRoot;
+	std::string homepage_documentRoot;
 
 	void parse(const std::string &name);
 

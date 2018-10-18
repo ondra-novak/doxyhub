@@ -18,6 +18,7 @@
 #include <simpleServer/query_parser.h>
 #include "SiteServer.h"
 #include "consolePage.h"
+#include "homePage.h"
 
 
 #include "initdb.h"
@@ -26,6 +27,15 @@
 #include "upload.h"
 #include "search.h"
 
+
+class HomePage {
+public:
+
+
+protected:
+
+
+};
 
 
 int main(int argc, char **argv) {
@@ -85,7 +95,7 @@ int main(int argc, char **argv) {
 		serverObj.addPath("/upload",[&](const HTTPRequest &req, const StrViewA &vpath) {
 			return upload.serve(req, vpath);
 		});
-		serverObj.addPath("/search",[&](HTTPRequest req, const StrViewA &vpath) mutable {
+	/*	serverObj.addPath("/search",[&](HTTPRequest req, const StrViewA &vpath) mutable {
 			if (req.allowMethods({"HEAD","GET"})) {
 				String url;
 				String branch;
@@ -106,7 +116,9 @@ int main(int argc, char **argv) {
 				}
 			}
 			return true;
-		});
+		});*/
+
+		serverObj.addPath("/", createHomepage(cfg.homepage_documentRoot,page_sources, builderdb));
 
 		BldControl bldcont(builderdb);
 		bldcont.init(serverObj);
