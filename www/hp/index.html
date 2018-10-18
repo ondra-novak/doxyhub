@@ -6,9 +6,9 @@
 <link href="files/style.css" rel="stylesheet" type="text/css" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
+<body onload="start()">
 <dh-top>
-<h1>doxyhub.io</h1>
+<h1>///@doxyhub.io </h1>
 <p>Online source documentation browser</p>
 </dh-top>
 <dh-content>
@@ -16,7 +16,7 @@
 <dh-search>
 <label><span>URL to a public GIT project:	</span><input type="text" id="query_url" value="https://"></label>
 <label><span>Branch</span><input type="text" id="query_branch" value="master"></label>
-<label><button>Browse the&nbsp;docs</button></label>
+<label><button id="run_query">Browse the&nbsp;docs</button></label>
 </dh-search>
 </dh-searchoutside>
 <dh-boxes>
@@ -29,7 +29,7 @@
 <li>Doc generator: <strong>doxygen</strong>
 <li>Generated formats: <strong>html only</strong>
 </ul>
-</dh-boxes>
+</dh-box>
 <dh-box>
 <h2>What's new</h2>
 <dl>

@@ -44,7 +44,7 @@ Value searchStatusByUrl(CouchDB &db, StrViewA url, StrViewA branch) {
 	Value x = searchByUrl(db,url, branch);
 	if (!x.defined()) {
 
-		return Object("_id",url2hash(url,branch))
+		return Object("id",url2hash(url,branch))
 					 ("found",false);
 
 	} else {
