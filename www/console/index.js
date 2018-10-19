@@ -220,6 +220,23 @@ function start() {
 		});		
 	}
 	
-	document.querySelector("#build_button").addEventListener("click",build_action);
+	function showlog_action() {
+		document.body.classList.add("showlogs");
+	}
+	function closelog_action() {
+		document.body.classList.remove("showlogs");
+	}
 	
+	document.querySelector("#build_button").addEventListener("click",build_action);
+	document.querySelector("#show_log_button").addEventListener("click",showlog_action);
+	document.querySelector("#closelogs").addEventListener("click",closelog_action);
+	
+	document.querySelectorAll("dh-showlogbox li").forEach(function(x){
+		x.addEventListener("click",function(x){
+			document.querySelectorAll("dh-showlogbox li").forEach(function(y){
+				y.classList.remove("selected");
+			});
+			x.classList.add("selected");
+		}.bind(null,x));
+	},this)
 }

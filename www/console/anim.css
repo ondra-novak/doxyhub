@@ -164,10 +164,11 @@ dh-qspin div.e {
 dh-qspin div.b {
     left: 0.2cm;
     top: 0.2cm;
+	border-bottom: 0.2cm solid #844;
 	border-top: 0.2cm solid #844;
     width: 1.1cm;
     height: 1.1cm;
-    animation: qspin_rotb 1s infinite linear;
+    animation: qspin_rotb 1s infinite reverse linear;
 }
 dh-qspin div.c {
     left: 0.4cm;
@@ -238,3 +239,19 @@ dh-progress div.unknown {
     animation: progres_unknown 2s infinite ;
     transition: none;
 }
+
+ @keyframes appear2 {
+ 	0% {
+ 		transform: translate(0,2cm);
+ 		opacity: 0;
+ 	}
+ 	50% {
+ 		transform: translate(0,2cm);
+ 		opacity: 0;
+ 	}
+ 	100% {
+ 		transform: translate(0,0);
+ 		opacity: 1;
+ 	}
+ 
+ }

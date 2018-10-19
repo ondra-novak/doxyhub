@@ -2,14 +2,18 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>DoxyHUB console</title>
+<title>Console - doxyhub.io</title>
 <link href="index.css" rel="stylesheet" type="text/css" />
 <link href="anim.css" rel="stylesheet" type="text/css" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body onload="start()">
 <div class="background">
-<h1>DoxyHUB console</h1>
+<dh-top>
+<h1>///@doxyhub.io </h1>
+<p>Project's console</p>
+</dh-top>
+<dh-overviewouter>
 <dh-overview>
 <dh-row>
 <dh-caption>Project URL:</dh-caption>
@@ -28,7 +32,7 @@
 <dh-field id="field_status">Loading...</dh-field>
 </dh-row>
 </dh-overview>
-
+</dh-overviewouter>
 
 <dh-controlbox class="when_queued">
 <dh-lightbox></dh-lightbox>
@@ -57,7 +61,7 @@
 </dh-controlbox>
 <dh-controlbox class="when_done">
 <dh-lightbox></dh-lightbox>
-<dh-status id="current_status">Success!</dh-status>
+<dh-status id="current_status">Ready!</dh-status>
 <button id="open_doc">Open</button>
 </dh-controlbox>
 <dh-controlbox class="when_error">
@@ -65,11 +69,21 @@
 <dh-status id="current_status">Error!</dh-status>
 <p >Error message: <span id="err_msg"></span></p>
 </dh-controlbox>
+<dh-showlogbox>
+<ul>
+<li class="selected" data-type="stdout">Std.output</li>
+<li data-type="stderr">Std.error</li>
+<li data-type="manifest">Manifest</li>
+</ul>
+<button id="closelogs">X</button>
+<textarea id="logcontent" readonly="readonly"></textarea>
+</dh-showlogbox>
 </div>
 <dh-bottompanel>
+<dh-lightbox></dh-lightbox>
 <div>
 <button id="build_button" class="when error unknown deleted done">Build now</button>
-<button id="show_log_button"  class="when error done">Show build logs</button>
+<button id="show_log_button"  class="when error done showlogs">Show build logs</button>
 </div>
 <label><input type="checkbox" id="keep_console_open"> Keep console open </label>
 </dh-bottompanel>
