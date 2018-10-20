@@ -8,9 +8,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body onload="start()">
+<dh-texts id="texts"
+	data-checkrev="Reading revision hash"
+	data-download="Downloading sources"
+	data-generate="Generating documentation"
+	data-upload="Compressing and uploading to the server"
+	data-err600="Queue internal error"
+	data-err603="Not modified"
+	data-err605="No more space available"
+	data-err610="Failed to clone the GIT repository"
+	data-err611="GIT clone took too long (timeout)"
+	data-err620="Doxygen execution failed/crashed"
+	data-err621="Doxygen took too long (timeout)"
+	data-err630="Upload failed"
+	></dh-texts>
 <div class="background">
 <dh-top>
-<h1>///@doxyhub.io </h1>
+<h1><a href="/">///@doxyhub.io </a></h1>
 <p>Project's console</p>
 </dh-top>
 <dh-overviewouter>
@@ -45,8 +59,8 @@
 <div class="e"></div>
 </dh-qspin>
 </dh-anchor>Queued</dh-status>
-<p >Estimated time: <span name="est_time"></span></p>
-<dh-progress><div id="qprogress"></div></dh-progress>
+<p >Please wait...</p>
+<dh-progress style="display:none"><div id="qprogress"></div></dh-progress>
 </dh-controlbox>
 <dh-controlbox class="when_building">
 <dh-lightbox></dh-lightbox>
@@ -58,6 +72,7 @@
 </div>
 </dh-anchor>Building</dh-status>
 <dh-progress><div id="bprogress"></div></dh-progress>
+<p id="stage"></p>
 </dh-controlbox>
 <dh-controlbox class="when_done">
 <dh-lightbox></dh-lightbox>
@@ -78,7 +93,6 @@
 <button id="closelogs">X</button>
 <textarea id="logcontent" readonly="readonly"></textarea>
 </dh-showlogbox>
-</div>
 <dh-bottompanel>
 <dh-lightbox></dh-lightbox>
 <div>
@@ -87,6 +101,7 @@
 </div>
 <label><input type="checkbox" id="keep_console_open"> Keep console open </label>
 </dh-bottompanel>
+</div>
 <script type="text/javascript" src="index.js"></script>
 </body>
 </html>

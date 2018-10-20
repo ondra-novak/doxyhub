@@ -25,6 +25,7 @@ public:
 
 	std::string working;
 	std::string doxyfile;
+	std::string footer;
 	std::string queueId;
 
 

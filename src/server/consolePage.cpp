@@ -14,6 +14,7 @@
 #include <couchit/exception.h>
 #include <couchit/query.h>
 #include <simpleServer/query_parser.h>
+#include <unistd.h>
 #include "url2Hash.h"
 #include "search.h"
 
@@ -39,10 +40,12 @@ static couchit::View qstat("_design/queue/_view/stats",(couchit::View::groupLeve
 
 ConsolePage::ConsolePage(CouchDB& db,
 		const std::string &document_root,
-		const std::string &upload_url)
+		const std::string &upload_url,
+		const std::string &storage_path)
 	:db(db)
 	,fmapper(std::string(document_root),"index.html")
 	,upload_url(upload_url)
+	,storage_path(storage_path)
 {
 }
 
@@ -98,6 +101,7 @@ void ConsolePage::rebuild_project(couchit::Document doc, bool force) {
 	chdoc.set("queue",selectQueue());
 	chdoc.set("upload_token",generate_token());
 	chdoc.set("upload_url",String({upload_url,"/",doc.getID()}));
+	chdoc.enableTimestamp();
 	if (force) chdoc.set("build_rev","");
 	db.put(chdoc);
 }
@@ -147,6 +151,12 @@ bool ConsolePage::checkBranchName(StrViewA branch) const {
 void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path) {
 
 	using namespace couchit;
+	bool force = false;
+
+	if (projectId.ends("-force")) {
+		projectId = projectId.substr(0,projectId.length-6);
+		force = true;
+	}
 
 	Value doc = db.get(projectId, CouchDB::flgNullIfMissing);;
 
@@ -157,6 +167,8 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 
 	if (cmd == "status") {
 
+		checkExist(projectId, doc);
+
 		Object result;
 		if (doc == nullptr) {
 			result("id", projectId)
@@ -166,7 +178,9 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 				  ("url",doc["url"])
 				  ("branch",doc["branch"])
 				  ("status",doc["status"])
-				  ("last_error",doc["error"])
+				  ("last_error",doc["error_code"])
+				  ("stage",doc["build_stage"])
+				  ("timestamp",doc["~timestamp"])
 				  ("rev",doc["build_rev"])
 				  ("build_time",doc["build_time"]);
 		}
@@ -190,7 +204,7 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 			return;
 		} else {
 
-			req.readBodyAsync(10000,[=](HTTPRequest req){
+			req.readBodyAsync(10000,[=](HTTPRequest req) mutable {
 
 				if (!req["Content-Type"].begins("application/json")) {
 					req.sendErrorPage(415);
@@ -200,11 +214,11 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 				auto buffer = req.getUserBuffer();
 				Value options;
 				StrViewA captcha_code;
-				bool force;
 
 				options = Value::fromString(StrViewA(BinaryView(buffer)));
 				captcha_code = options["captcha"].getString();
-				force = options["force"].getBool();
+				if (options["force"].defined())
+					force = options["force"].getBool();
 
 				if (!checkCapcha(captcha_code)) {
 					req.sendErrorPage(402);
@@ -345,6 +359,25 @@ Value ConsolePage::generate_token() {
 bool ConsolePage::checkCapcha(StrViewA capcha) const {
 	//TODO:
 	return !capcha.empty();
+}
+
+void ConsolePage::checkExist(const StrViewA &projectId, Value &doc) {
+	Value status = doc["status"];
+	if (status.getString() == "done") {
+		std::string path = storage_path;
+		path.append(projectId.data,projectId.length);
+		if (access(path.c_str(),0)) {
+			Document x(doc);
+			x.set("status","deleted");
+			x.set("build_rev","");
+			try {
+				db.put(x);
+			} catch (...) {
+
+			}
+			doc = x;
+		}
+	}
 }
 
 }

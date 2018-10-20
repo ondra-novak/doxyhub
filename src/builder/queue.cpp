@@ -9,6 +9,7 @@
 #include <shared/logOutput.h>
 #include <shared/waitableEvent.h>
 #include <thread>
+#include <couchit/query.h>
 
 
 namespace doxyhub {
@@ -47,6 +48,14 @@ Queue::Queue(Builder &bld, CouchDB &db, const std::string &queueId)
 		distr.includeDocs();
 		distr.setFilter(Filter("queue/queue"));
 		distr.arg("queueid",queueId);
+
+		View b("_design/queue/_view/building", View::includeDocs|View::update);
+		couchit::Result res = db.createQuery(b).key(queueId).exec();
+		res.update(db,[](Document doc) {
+			doc.set("status","queued");
+			return doc;
+		});
+
 }
 
 Queue::~Queue() {
@@ -80,32 +89,59 @@ void Queue::processChange(const ChangeEvent &doc) {
 				curDoc.unset("error");
 				curDoc.object("build_time").set("start",(std::size_t)std::chrono::system_clock::to_time_t(startTime));
 				put_merge(curDoc);
-				bool r = false;
+				DoxyhubError r = DoxyhubError::ok;
 				try {
-					r = bld.buildDoc(curDoc["url"].getString(),
-							curDoc["branch"].getString(),
-							curDoc["build_rev"].getString(),
-							curDoc["upload_url"].getString(),
-							curDoc["upload_token"].getString());
-					curDoc.set("status","done");
-					curDoc.unset("error");
-					curDoc.set("build_rev", StrViewA(bld.revision));
+					Builder::BuildRequest req;
+					req.branch = curDoc["branch"].getString();
+					req.revision = curDoc["build_rev"].getString();
+					req.upload_token = curDoc["upload_token"].getString();
+					req.upload_url = curDoc["upload_url"].getString();
+					req.url = curDoc["url"].getString();
+					req.progressFn = [&](BuildStage stage) {
+
+						const char *s;
+
+						switch (stage) {
+						case BuildStage::checkrev: s = "checkrev";break;
+						case BuildStage::download: s = "download";break;
+						case BuildStage::generate: s = "generate";break;
+						case BuildStage::upload: s = "upload";break;
+						default: s = "unknown";
+						}
+						curDoc.set("build_stage", s);
+						put_merge(curDoc);
+					};
+
+					r = bld.buildDoc(req);
+
+
 					put_merge(curDoc);
 				} catch (std::exception &e) {
 					if (exitPhase) {
-						curDoc.set("status","queued");
+						r = DoxyhubError::internal_restart;
 					} else {
-						curDoc.set("status","error")
-								  ("error",e.what());
+						r = DoxyhubError::internal_error;
+						logError("Builder exception: $1", e.what());
 					}
 				}
+
+				curDoc.unset("build_stage");
+				if (r == DoxyhubError::ok || r == DoxyhubError::not_modified) {
+					curDoc.set("status","done");
+					curDoc.unset("error");
+					curDoc.set("build_rev", StrViewA(bld.revision));
+				} else {
+					curDoc.set("status","error");
+					curDoc.set("error_code",(int)r);
+				}
+
 				curDoc.inlineAttachment("stdout",AttachmentDataRef(
 						BinaryView(StrViewA(bld.log)),"text/plain"
 				));
 				curDoc.inlineAttachment("stderr",AttachmentDataRef(
 						BinaryView(StrViewA(bld.warnings)),"text/plain"
 				));
-				if (r) {
+				if (r == DoxyhubError::ok) {
 					auto endTime = std::chrono::system_clock::now();
 					auto dur = std::chrono::duration_cast<std::chrono::seconds>(endTime-startTime).count();
 					Value avrdur = curDoc["build_time"]["avg_duration"];
@@ -118,16 +154,18 @@ void Queue::processChange(const ChangeEvent &doc) {
 							.set("end",(std::size_t)std::chrono::system_clock::to_time_t(endTime))
 							.set("duration",dur)
 							.set("avg_duration",avrdur);
-
+					curDoc.set("verified",true);
 				}
+
+				put_merge(curDoc);
+
+				logProgress("Build finished : doc=$1, url=$2, status=$3",
+						curDoc.getID(),curDoc["url"].getString(),curDoc["status"].getString()
+				);
 			}
 
-			logProgress("Build finished : doc=$1, url=$2, status=$3",
-					curDoc.getID(),curDoc["url"].getString(),curDoc["status"].getString()
-			);
 
 
-			put_merge(curDoc);
 
 		} catch (std::exception &e) {
 			logError("Building exception $1", e.what());
@@ -135,6 +173,8 @@ void Queue::processChange(const ChangeEvent &doc) {
 }
 
 void Queue::run() {
+
+
 	exitPhase = false;
 	buildWorker = Worker::create(1);
 

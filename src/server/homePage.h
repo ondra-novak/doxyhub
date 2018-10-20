@@ -24,6 +24,9 @@ auto createHomepage(StrViewA documentRoot, doxyhub::SiteServer &docs, couchit::C
 
 		if (vpath == "/" || vpath.begins("/files/")) {
 			return homepage(req, vpath);
+		} else if (vpath == "/favicon.ico") {
+			req.sendErrorPage(404);
+			return true;
 		} else if (vpath.begins("/search?")) {
 			if (req.allowMethods({"HEAD","GET"})) {
 				String url;

@@ -24,7 +24,8 @@ class ConsolePage {
 public:
 	ConsolePage(CouchDB &db,
 				const std::string &document_root,
-				const std::string &upload_url);
+				const std::string &upload_url,
+				const std::string &storage_path);
 
 	bool serve(StrViewA projectId, HTTPRequest req, StrViewA vpath);
 
@@ -34,6 +35,7 @@ protected:
 	CouchDB &db;
 	HttpFileMapper fmapper;
 	std::string upload_url;
+	std::string storage_path;
 
 	void sendAttachment(Value doc, StrViewA attchname, HTTPRequest req);
 	Value selectQueue();
@@ -44,6 +46,8 @@ protected:
 	Value checkExist(StrViewA url, StrViewA branch) const;
 	bool checkCapcha(StrViewA capcha) const;
 	bool checkBranchName(StrViewA branch) const;
+
+	void checkExist(const StrViewA &projectId, Value &doc);
 };
 
 } /* namespace doxyhub */

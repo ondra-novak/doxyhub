@@ -26,11 +26,14 @@ public:
 	void set_start_dir(std::string &&sd) {start_dir = std::move(sd);}
 	void set_start_dir(const std::string &sd) {start_dir = sd;}
 	void terminate();
+	bool wasTimeout() const {return timeouted;}
+
 protected:
 	std::string pathname;
 	std::string start_dir;
 	EnvVars envp;
 	pid_t pid;
+	bool timeouted;
 	unsigned int activityTimeout;
 	unsigned int totalTimeout;
 };

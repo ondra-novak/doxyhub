@@ -101,6 +101,7 @@ namespace {
 int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 
 	logDebug("External process (@$3): $1 $2 ", pathname, args, start_dir);
+	timeouted = false;
 
 	try {
 		Fd stdout_read, stdout_write;
@@ -189,6 +190,7 @@ int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 					throw SystemException(err,"poll failed");
 				}
 				if (pres == 0) {
+					timeouted = true;
 					kill(pid,SIGTERM);
 					continue;
 				}
@@ -196,6 +198,7 @@ int ExternalProcess::execute(std::initializer_list<StrViewA> args) {
 				time_t curtime;
 				time(&curtime);
 				if (curtime - start > totalTimeout) {
+					timeouted = true;
 					kill(pid,SIGTERM);
 					break;
 				}
@@ -242,3 +245,4 @@ void ExternalProcess::terminate() {
 
 
 } /* namespace doxyhub */
+

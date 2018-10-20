@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 		AsyncProvider asyncProvider = ThreadPoolAsync::create(cfg.server_threads, cfg.server_dispatchers);
 		NetAddr addr = NetAddr::create(cfg.bind,8800,NetAddr::IPvAll);
 
-		ConsolePage consolePage(builderdb, cfg.console_documentRoot, cfg.upload_url);
+		ConsolePage consolePage(builderdb, cfg.console_documentRoot, cfg.upload_url, cfg.storage_path);
 
 		SiteServer page_sources(consolePage, cfg.storage_path, cfg.pakCacheCnt, cfg.clusterCacheCnt);
 		UploadHandler upload(builderdb, cfg.storage_path, [&](auto &&a) {

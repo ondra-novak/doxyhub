@@ -26,6 +26,7 @@ namespace doxyhub {
 using simpleServer::SystemException;
 using ondra_shared::RAII;
 using ondra_shared::logDebug;
+using ondra_shared::logError;
 using ondra_shared::StrViewA;
 
 Builder::Builder(const Config& cfg, EnvVars envVars):cfg(cfg),envVars(envVars) {
@@ -103,7 +104,7 @@ static std::string combineLogs(std::ostringstream &git, std::ostringstream &doxy
 	return tmp.str();
 }
 
-/*
+
 static bool copy_file_only(const std::string &src, const std::string &trg) {
 
 	typedef RAII<int, decltype(&close), &close> FD;
@@ -119,7 +120,7 @@ static bool copy_file_only(const std::string &src, const std::string &trg) {
 	}
 	return true;
 }
-
+/*
 static void recursive_move(const std::string &source, const std::string& target) {
 
 	WalkDir::walk_directory(source, true, [&](const std::string &path, WalkDir::WalkEvent event) {
@@ -160,7 +161,25 @@ static void fast_replace(const std::string& src_path, const std::string& target_
 	}
 }
 */
-void pack_files(const std::string &path, const std::string &file, const std::string &revision, std::size_t clusterSize) {
+
+static void clean_after_clone(const std::string &path) {
+	WalkDir::walk_directory(path, false, [&](const std::string &p, WalkDir::WalkEvent ev) {
+		if (p[path.length()+1] == '.') {
+			if (ev == WalkDir::directory_leave) {
+				recursive_erase(p);
+			} else if (ev == WalkDir::file_entry) {
+				remove(p.c_str());
+			}
+		}
+		return true;
+	});
+}
+
+static void clean_after_build(const std::string &path) {
+	recursive_erase(path);
+}
+
+bool pack_files(const std::string &path, const std::string &file, const std::string &revision, std::size_t clusterSize) {
 
 	std::vector<std::string> files;
 	WalkDir::walk_directory(path, true, [&](const std::string &p, WalkDir::WalkEvent ev) {
@@ -177,30 +196,25 @@ void pack_files(const std::string &path, const std::string &file, const std::str
 	m.close();
 	files.push_back(manifest.substr(path.length()+1));
 
-	if (!zwebpak::packFiles(files, path+"/", file, revision, clusterSize)) {
-		throw std::runtime_error("Failed to pack files:" + file);
-	}
+	return zwebpak::packFiles(files, path+"/", file, revision, clusterSize);
 }
 
-bool Builder::buildDoc(const std::string& url,
-		const std::string& branch,
-		const std::string &revision,
-		const std::string &upload_url,
-		const std::string &upload_token) {
+DoxyhubError Builder::buildDoc(const BuildRequest &req) {
 
-
+	req.progressFn(BuildStage::checkrev);
 	ExternalProcessWithLog doxygen(cfg.doxygen,envVars,cfg.activityTimeout, cfg.totalTimeout);
 	ExternalProcessWithLog git(cfg.git,envVars,cfg.activityTimeout, cfg.totalTimeout);
 	ExternalProcessWithLog curl(cfg.curl, envVars, cfg.activityTimeout, cfg.totalTimeout);
 
 
-	std::string curRev = get_git_last_revision(std::move(git), url, branch);
+	std::string curRev = get_git_last_revision(std::move(git), req.url, req.branch);
 
 
 	this->revision = curRev;
 	this->log.clear();
 	this->warnings.clear();
-	if (curRev == revision) return false;
+	if (curRev == req.revision) return DoxyhubError::not_modified;
+
 
 	std::string path = cfg.working +"/pack";
 
@@ -215,17 +229,29 @@ bool Builder::buildDoc(const std::string& url,
 	git.set_start_dir(unpack);
 	doxygen.set_start_dir(unpack);
 
+	req.progressFn(BuildStage::download);
+
+
 	int res;
 
-	{
+	try {
 		AGuard _(activeTool, &git);
-		res = git.execute({"clone","--progress","-b",branch,"--depth","1",url,"."});;
+		res = git.execute({"clone","--progress","-b",req.branch,"--depth","1",req.url,"."});;
+	} catch (std::exception &e) {
+		git.error << std::endl << "Exception:" << e.what() << std::endl;
+		res = -1;
 	}
+
+	this->log = git.output.str();
+	this->warnings = git.error.str();
 	if (res != 0) {
-		this->log = git.output.str();
-		this->warnings = git.error.str();
-		throw std::runtime_error("GIT:clone failed for url: " + url);
+		return git.wasTimeout()?DoxyhubError::git_clone_timeout:DoxyhubError::git_clone_failed;
 	}
+
+	req.progressFn(BuildStage::generate);
+
+
+	clean_after_clone(unpack);
 
 	std::string doxyfile = unpack+"/Doxyfile";
 	std::string adj_doxyfile = doxyfile+".doxyhub.1316048469";
@@ -233,39 +259,50 @@ bool Builder::buildDoc(const std::string& url,
 		doxyfile = cfg.doxyfile;
 	}
 
-	prepareDoxyfile(doxyfile, adj_doxyfile, "../build",url);
-
-	{
+	prepareDoxyfile(doxyfile, adj_doxyfile, "../build",req.url);
+	copy_file_only(cfg.footer,unpack+"/.footer.html");
+	try {
 		AGuard _(activeTool, &doxygen);
 		res = doxygen.execute({"Doxyfile.doxyhub.1316048469"});
+	} catch (std::exception &e) {
+		doxygen.error << std::endl << "Exception:" << e.what() << std::endl;
+		res = -1;
 	}
 
 	this->log = combineLogs(git.output, doxygen.output);
 	this->warnings = combineLogs(git.error, doxygen.error);
 
 	if (res != 0)  {
-		throw std::runtime_error("Doxygen failed for url: " + url);
+		return doxygen.wasTimeout()?DoxyhubError::build_timeout:DoxyhubError::build_failed;
 	}
+
+	req.progressFn(BuildStage::upload);
+
+	clean_after_build(unpack);
+
 
 /*	makeDir(newpath);
 	recursive_erase(newpath);
 	recursive_move(build_html, newpath);
 	fast_replace(newpath,path);*/
-	pack_files(build_html, path, curRev, cfg.clusterSize);
+	if (!pack_files(build_html, path, curRev, cfg.clusterSize)) {
+		return DoxyhubError::no_space;
+	}
 	curl.set_start_dir(build_html);
-	std::string token_header = "Authorization: bearer "+upload_token;
+	std::string token_header = "Authorization: bearer "+req.upload_token;
 	res = curl.execute({"-X","PUT",
 			"-H","Content-Type: application/octet-stream",
 			"-H",token_header,
-			"--data-binary", "@"+path, upload_url});
+			"--data-binary", "@"+path, req.upload_url});
 	unlink(path.c_str());
 	recursive_erase(build);
 
 	if (res != 0) {
-		throw std::runtime_error("Upload failed to url: " + upload_url);
+		logError ("Upload failed to url: $1 (error: $2)" , req.upload_url, res);
+		return DoxyhubError::upload_failed;
 	}
 
-	return true;
+	return DoxyhubError::ok;
 }
 
 static StrViewA extractNameFromURL(StrViewA url) {

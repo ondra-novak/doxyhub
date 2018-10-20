@@ -10,9 +10,9 @@ function start() {
 
 		var url = qurl.value;
 		var branch = qb.value;
-		butt.disabled = true;
 		if ((url.startsWith("https://") || url.startWith("http://")) 
 				&& branch.length && url.length>10) {
+			butt.disabled = true;
 			
 			var args = "url="+encodeURIComponent(url)+"&branch="+encodeURIComponent(branch);
 			var sreq = "search?"+args;

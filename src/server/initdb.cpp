@@ -23,7 +23,7 @@ function(doc,req) {
 static StrViewA queueStats = R"javascript(
 function(doc) {
 	if (doc.url && doc.queue && (doc.status == "queued" || doc.status == "building")) {
-		emit(doc.queue, (doc.build_time && doc.build_time.duration)?doc.build_time.duration:90);
+		emit(doc.queue, (doc.build_time && doc.build_time.avg_duration)?doc.build_time.avg_duration:600);
 	} else if (doc.type == "queue") {
 		emit(doc._id, 0);
 	}
@@ -41,7 +41,7 @@ function(doc) {
     return t.substr(t.length-x.length) == x;
   }
   
-	if (doc.url) {
+	if (doc.url && doc.status != "error") {
 		var url = doc.url;
 
 		if (begins(url,"https://")) url= url.substr(8);
@@ -56,12 +56,21 @@ function(doc) {
 
 )javascript";
 
+static StrViewA curBuilding = R"javascript(
+
+function(doc) {
+	if (doc.status && doc.status == "building") emit(doc.queue);
+}
+
+)javascript";
+
 static Value queueDesignDoc = Object("_id","_design/queue")
 		("language","javascript")
 		("filters", Object("queue", filterFn))
 		("views", Object
 				("stats", Object("map",queueStats)("reduce","_stats"))
 				("byURL", Object("map",byURL))
+				("building", Object("map",curBuilding))
 		);
 
 

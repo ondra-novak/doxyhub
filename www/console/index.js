@@ -77,6 +77,12 @@ function start() {
 		timer = setTimeout(setProgressAutoTime.bind(null,id,start_time,duration),Math.random()*5000);
 	}
 	
+	function setFakeProgress(id, beg, en, start_time) {
+		var t = Date.now()-start_time*1000; 
+		var part = (en - beg)*(t/(t+50000));
+		setProgress(id,part+beg,false);
+	}
+	
 	window.setProgress = setProgress;
 	window.setProgressAutoTime = setProgressAutoTime;
 	
@@ -117,7 +123,7 @@ function start() {
 			document.querySelector("#field_url").innerText = data["url"];
 			document.querySelector("#field_branch").innerText = data["branch"];
 			document.querySelector("#field_rev").innerText = data["rev"];
-			var statfld = document.querySelector("#field_status"); 
+			var statfld = document.querySelector("#field_status");
 			
 			switch (data["status"]) {
 			case "unknown":
@@ -135,7 +141,7 @@ function start() {
 			case "error":
 				setStatus("error");
 				statfld.innerText = "error";
-				document.querySelector("#err_msg").innerText = data["last_error"];
+				document.querySelector("#err_msg").innerText = document.getElementById("texts").getAttribute("data-err"+data.last_error);
 				break;
 			case "queued":
 				setStatus("queued");
@@ -145,14 +151,26 @@ function start() {
 			case "building":
 				setStatus("building");
 				statfld.innerText = "building";
-				var dur = data.build_time.avg_duration?data.build_time.avg_duration:60;
-				setProgress("bprogress",(Date.now()-(data.build_time.start*1000))/(dur*10), true);
+				if (data.build_time.avg_duration) {
+					var dur = data.build_time.avg_duration;
+					setProgress("bprogress",(Date.now()-(data.build_time.start*1000))/(dur*10), true);
+				} else {
+					switch (data.stage) {
+					case "checkrev": setFakeProgress("bprogress", 0,7,data.timestamp);break;
+					case "download": setFakeProgress("bprogress", 7,30,data.timestamp);break;
+					case "generate": setFakeProgress("bprogress", 30,90,data.timestamp);break;
+					case "upload": setFakeProgress("bprogress", 90,100,data.timestamp);break;
+					}					
+				}
+				document.querySelector("#stage").innerText = document.getElementById("texts").getAttribute("data-"+data.stage);
 				update_interval = 2000;
 				break;
 			}
 			
 			statusFetch.timerId = setTimeout(statusFetch, update_interval)
 			cur_server_status = data;
+		}).catch(function(){
+			statusFetch.timerId = setTimeout(statusFetch, 5000);
 		});
 		
 		statusFetch.stop = function() {

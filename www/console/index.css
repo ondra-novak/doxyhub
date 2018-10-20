@@ -28,7 +28,12 @@ dh-top h1 {
 	border-bottom: 4px double;
 	padding-bottom: 6px;
 	width: 11em;
-	
+	font-family: sans-serif;
+}
+
+dh-top h1 a {
+	color: inherit;
+	text-decoration: none;	
 }
 
 dh-top p {
@@ -148,6 +153,7 @@ dh-showlogbox {
 	margin: auto;
 	text-align:center;
 	position: relative;
+	overflow: hidden;
 }
 
 dh-showlogbox ul {
@@ -247,21 +253,25 @@ body.status.deleted button.when.deleted {
 
 dh-bottompanel {
 	display:block;
-	position: fixed;
-	left:0;
-	right:0;
-	bottom:0;
+	position: relative;
+	/* left:0; */
+	/* right:0; */
+	/* bottom:0; */
 	text-align: center;
 	padding-top: 0.3em;
 	box-sizing: border-box;
-	opacity: 0.99;	
+	opacity: 0.99;
 	overflow: hidden;
 	max-height: 5em;
 	transition: max-height 0.5s;
+	margin: 1cm auto;
+	width: 10cm;
+	padding:  0.3cm;
 }
 
 .showlogs dh-bottompanel {
 	max-height: 0;
+	padding: 0;
 	
 }
 

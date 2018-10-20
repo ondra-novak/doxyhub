@@ -42,8 +42,10 @@ void Config::parse(const std::string& name) {
 	const IniConfig::KeyValueMap &generate = cfg["generate"];
 	working= generate.mandatory["working"].getPath();
 	doxyfile = generate.mandatory["doxyfile"].getPath();
+	footer =  generate.mandatory["footer"].getPath();
 	queueId = generate.mandatory["queue_id"].getString();
 	clusterSize = generate.mandatory["cluster_size"].getUInt();
+
 
 
 	const IniConfig::KeyValueMap &log = cfg["log"];
