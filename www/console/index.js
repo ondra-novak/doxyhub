@@ -240,14 +240,56 @@ function start() {
 	
 	function showlog_action() {
 		document.body.classList.add("showlogs");
+		document.querySelector("#showlogs").classList.add("shown");
+		var ifrm = document.querySelector("#logviewer");
+		ifrm.src = "";
+		setTimeout(function() {
+			ifrm.src = "api/log.html";
+		},1);
+	}
+	function showmanifest_action() {
+		document.body.classList.add("showlogs");
+		document.querySelector("#showmanifest").classList.add("shown");
+		document.querySelector("#manifest_progress").classList.add("shown");
+		setTimeout(function() {
+			fetch("..//manifest.txt").then(function(x) {
+				return x.text();
+			}).then(function(x) {
+				var lines = x.split("\n").sort();
+				var elem = document.querySelector("#manifest_content");
+				elem.innerText = "";
+				var frag = document.createDocumentFragment();
+				lines.forEach(function(l){
+					var z = document.createElement("div");
+					var a = document.createElement("a");
+					a.innerText = l;
+					a.setAttribute("href","..//"+l);
+					a.setAttribute("target" ,"_blank");
+					z.appendChild(a);
+					frag.appendChild(z);				
+				});
+				elem.appendChild(frag);
+				document.querySelector("#manifest_progress").classList.remove("shown");
+			});
+		},900);
 	}
 	function closelog_action() {
 		document.body.classList.remove("showlogs");
+		document.querySelector("#showlogs").classList.remove("shown");
+	}
+	function closemanifest_action() {
+		var elem = document.querySelector("#manifest_content");
+		elem.innerText="";
+		document.body.classList.remove("showlogs");
+		document.querySelector("#showmanifest").classList.remove("shown");
 	}
 	
 	document.querySelector("#build_button").addEventListener("click",build_action);
 	document.querySelector("#show_log_button").addEventListener("click",showlog_action);
 	document.querySelector("#closelogs").addEventListener("click",closelog_action);
+	document.querySelector("#closemanifest").addEventListener("click",closemanifest_action);
+	document.querySelector("#show_manifest").addEventListener("click",showmanifest_action);
+	document.querySelector("#download_button").addEventListener("click",function(){location.href="api/log.txt";});
 	
 
 }

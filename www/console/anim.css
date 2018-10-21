@@ -255,3 +255,50 @@ dh-progress div.unknown {
  	}
  
  }
+ 
+ @keyframes pulse {
+   0% {
+   	transform: scale(1,1);
+   }
+   60% {
+   	transform: scale(1,1);
+   } 
+   80% {
+   	transform: scale(1.2,1.2);
+   } 
+   100% {
+   	transform: scale(1,1);
+   } 
+ }
+ @keyframes shiver {
+   0% {
+   	transform: rotate(90deg);
+   }
+   60% {
+   	transform: rotate(90deg);
+   } 
+   65% {
+   	transform: rotate(80deg);
+   } 
+   70% {
+   	transform: rotate(100deg);
+   } 
+   75% {
+   	transform: rotate(80deg);
+   } 
+   80% {
+   	transform: rotate(100deg);
+   } 
+   85% {
+   	transform: rotate(80deg);
+   } 
+   90% {
+   	transform: rotate(100deg);
+   } 
+   95% {
+   	transform: rotate(80deg);
+   } 
+   100% {
+   	transform: rotate(90deg);
+   } 
+ }

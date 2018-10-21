@@ -6,7 +6,15 @@ body {
 	font-family: sans-serif;
 	transition: all 1s;
 	margin: 0;
-	padding: 0;]
+	padding: 0;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
 }
 
 
@@ -45,8 +53,7 @@ body.status.unknown .background,body.status.deleted  .background {
 }
 
 body.status.done  .background{
-	background-color: #CCFFCC;
-	
+	background-color: #c9e6cc;
 }
 body.status.building  .background{
 	background-color: #CCCCFF;
@@ -55,7 +62,7 @@ body.status.queued  .background{
 	background-color: #FFFFCC;	
 }
 body.status.error  .background{
-	background-color: #FFCCCC;	
+	background-color: #ffd7cc;
 }
 
 body > div.background {
@@ -149,44 +156,30 @@ dh-showlogbox {
 	max-height:0;
 	display:block;
 	opacity: 0;
-	max-width: 50em;
-	margin: auto;
+	margin: 0 1em;
 	text-align:center;
 	position: relative;
 	overflow: hidden;
 }
 
-dh-showlogbox ul {
-	background-color: white;
-	margin:0;
-	padding:0;
+dh-showlogbox dh-top {
+	background-color: #888;
 }
 
-dh-showlogbox li {
-	display: inline-block;
-	padding: 0.2cm 0.2cm;
-	border-left: 1px solid;
-	border-right: 1px solid;
-	margin: 0 -1px 0 -1px;
-	box-sizing:border-box;
-	list-style: none;
-	cursor: pointer;	
-}
-
-dh-showlogbox li:hover {
-	background-color: #CFC;
-}
-
-dh-showlogbox li.selected {
-	background-color: #FF0;
-}
-dh-showlogbox textarea {
+dh-showlogbox iframe,dh-showlogbox #manifest_content {
 	width: 100%;
 	height: 60vh;
 	box-sizing:border-box;
+	background-color: white;
+	border: 1px solid;
 
 }
-#closelogs {
+dh-showlogbox #manifest_content{
+	text-align: left;
+	padding: 0 1em;
+	overflow: auto;
+}
+.closebutt {
 	position: absolute;
 	right:2px;
 	top: 2px;
@@ -195,7 +188,7 @@ dh-showlogbox textarea {
 	background: none;
 	border: none;
 }
-body.status.showlogs dh-showlogbox {
+dh-showlogbox.shown {
 	max-height: 100vh;
 	opacity: 0.99; 
 		
@@ -245,7 +238,7 @@ body.status.error button.when.error,
 body.status.queued button.when.qeued,
 body.status.unknown button.when.unknown,
 body.status.deleted button.when.deleted {
-	width: 10em;
+	width: 9em;
 	opacity: 0.99;
 	font-size: 1em;
 }
@@ -266,7 +259,7 @@ dh-bottompanel {
 	max-height: 5em;
 	transition: max-height 0.5s;
 	margin: 1cm auto;
-	width: 10cm;
+	max-width: 12cm;
 	padding:  0.3cm;
 }
 
@@ -291,4 +284,31 @@ dh-controlbox dh-progress {
 
 button {
 	cursor: pointer;
+}
+
+#manifest_progress {
+	display:none;
+	width: 1px;
+	margin: 0 auto;
+	position: relative;
+	height: 0;
+	top: 1cm;
+	left: 1.2cm;
+	/* line-height: 0; */
+}
+
+#manifest_progress.shown {
+	display: block;
+}
+
+img.check, img.error {
+		display: block;
+		width:  1.5cm;
+		height: 1.5cm;
+		position: absolute;
+		right: 0.2cm;
+		animation: pulse 3s infinite ease-in-out;
+}
+img.error{
+	animation: shiver 3s infinite ease-in-out;
 }

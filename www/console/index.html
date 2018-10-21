@@ -76,27 +76,50 @@
 </dh-controlbox>
 <dh-controlbox class="when_done">
 <dh-lightbox></dh-lightbox>
-<dh-status id="current_status">Ready!</dh-status>
+<dh-status id="current_status">
+<dh-anchor>
+<img src="check.png" class="check">
+</dh-anchor>Ready!</dh-status>
 <button id="open_doc">Open</button>
 </dh-controlbox>
 <dh-controlbox class="when_error">
 <dh-lightbox></dh-lightbox>
-<dh-status id="current_status">Error!</dh-status>
+<dh-status id="current_status"><dh-anchor>
+<img src="error.png" class="error">
+</dh-anchor>Error!</dh-status>
 <p >Error message: <span id="err_msg"></span></p>
 </dh-controlbox>
-<dh-showlogbox>
+<dh-showlogbox id="showlogs">
 <dh-top>
-<dh-lightbox></dh-lightbox>
 <button id="download_button">Download</button>
 </dh-top>
-<button id="closelogs">X</button>
-<textarea id="logcontent" readonly="readonly"></textarea>
+<button id="closelogs" class="closebutt">X</button>
+<iframe src="about:blank" id="logviewer"></iframe>
+</dh-showlogbox>
+<dh-showlogbox id="showmanifest">
+<dh-top>
+Generated files
+</dh-top>
+<button id="closemanifest" class="closebutt">X</button>
+<div id="manifest_progress">
+<dh-qspin>
+<div class="a"></div>
+<div class="b"></div>
+<div class="c"></div>
+<div class="d"></div>
+<div class="e"></div>
+</dh-qspin>
+</div>
+<div id="manifest_content">
+</div>
 </dh-showlogbox>
 <dh-bottompanel>
 <dh-lightbox></dh-lightbox>
 <div>
-<button id="build_button" class="when error unknown deleted done">Build now</button>
+
 <button id="show_log_button"  class="when error done showlogs">Show build logs</button>
+<button id="show_manifest"  class="when done showlogs">Show files</button>
+<button id="build_button" class="when error unknown deleted done">Enqueue for build</button>
 </div>
 <label><input type="checkbox" id="keep_console_open"> Keep console open </label>
 </dh-bottompanel>

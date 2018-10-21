@@ -148,6 +148,10 @@ void ConsolePage::sendFormattedAttachment(Value doc, StrViewA attchname, HTTPReq
 						   buffer.push_back(c);
 						   newln = false;
 						   break;
+				case '<': buffer.append("&lt;");break;
+				case '>': buffer.append("&gt;");break;
+				case '&': buffer.append("&amp;");break;
+				case '"': buffer.append("&quot;");break;
 				default: if (newln) buffer.append("<div class=\"both\">");
 						  buffer.push_back(c);
 						  newln = false;
