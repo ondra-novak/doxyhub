@@ -34,6 +34,32 @@ using ondra_shared::logProgress;
 
 namespace doxyhub {
 
+static const char *formatted_attachment_header = R"html(
+<!DOCTYPE html>
+<html><head><title>log.txt</title><meta charset="utf-8"></head>
+<style>
+body {
+font-family:monospace;
+white-space: pre;
+}
+.stdout {
+  color: #440;
+}
+.stderr {
+  color: #C44;
+}
+.both  {
+ color: black;
+}
+</style>
+<body>
+)html";
+
+static const char *formatted_attachment_footter = R"html(
+</body>
+</html>
+)html";
+
 
 static couchit::View qstat("_design/queue/_view/stats",(couchit::View::groupLevel*1)|couchit::View::reduce);
 
@@ -61,7 +87,8 @@ bool ConsolePage::serve(StrViewA projectId, HTTPRequest req, StrViewA vpath) {
 	return true;
 }
 
-void ConsolePage::sendAttachment(Value doc, StrViewA attchname, HTTPRequest req) {
+template<typename Fn>
+void ConsolePage::sendAttachment(Value doc, StrViewA attchname, HTTPRequest req, Fn &&formatter, StrViewA content_type) {
 
 	if (doc == nullptr) {
 		req.sendErrorPage(404);
@@ -76,14 +103,14 @@ void ConsolePage::sendAttachment(Value doc, StrViewA attchname, HTTPRequest req)
 
 			auto stream = req.sendResponse(HTTPResponse(200)
 					("ETag",dwn.etag)
-					.contentLength(dwn.length)
-					.contentType(dwn.contentType));
+					.contentType(content_type));
 
 			auto data = dwn.read();
 			while (!data.empty()) {
-				stream.write(data);
+				stream.write(formatter(data));
 				data = dwn.read();
 			}
+			stream.write(formatter(data));
 
 
 		} catch (const couchit::RequestError &err) {
@@ -91,9 +118,51 @@ void ConsolePage::sendAttachment(Value doc, StrViewA attchname, HTTPRequest req)
 			req.sendErrorPage(err.getCode());
 		}
 	}
+}
 
+void ConsolePage::sendAttachment(Value doc, StrViewA attchname, HTTPRequest req) {
+	sendAttachment(doc, attchname,req,
+			[](BinaryView data) {return data;},
+			"application/octet-stream");
+}
+void ConsolePage::sendFormattedAttachment(Value doc, StrViewA attchname, HTTPRequest req) {
+
+	std::string buffer = formatted_attachment_header;
+	bool newln = true;
+	bool beg = true;
+	auto formatter = [beg, buffer,newln](BinaryView data) mutable {
+		if (!beg) buffer.clear(); else beg = false;
+		if (data.empty()) {
+			return BinaryView(StrViewA(formatted_attachment_footter));
+		} else {
+			for (auto c: data) {
+				switch (c) {
+				case '\n': if (!newln) buffer.append("</div>");
+						   newln = true;
+						   break;
+				case '!': if (newln) buffer.append("<div class=\"stderr\">");
+						   buffer.push_back(c);
+						   newln = false;
+						   break;
+				case '-': if (newln) buffer.append("<div class=\"stdout\">");
+						   buffer.push_back(c);
+						   newln = false;
+						   break;
+				default: if (newln) buffer.append("<div class=\"both\">");
+						  buffer.push_back(c);
+						  newln = false;
+						  break;
+				}
+			}
+			return BinaryView(StrViewA(buffer));
+		}
+
+	};
+
+	sendAttachment(doc, attchname, req, formatter, "text/html;charset=utf-8");
 
 }
+
 
 void ConsolePage::rebuild_project(couchit::Document doc, bool force) {
 	Document chdoc(doc);
@@ -187,10 +256,10 @@ void ConsolePage::run_api(StrViewA projectId, HTTPRequest req,StrViewA api_path)
 
 		req.sendResponse("application/json",Value(result).stringify());
 
-	} else if (cmd == "stdout") {
-		sendAttachment(doc, "stdout", req);
-	} else if (cmd == "stderr") {
-		sendAttachment(doc, "stderr", req);
+	} else if (cmd == "log.html") {
+		sendFormattedAttachment(doc, "log", req);
+	} else if (cmd == "log.txt") {
+		sendAttachment(doc, "log", req);
 	} else if (cmd == "queue") {
 		couchit::Query q = db.createQuery(qstat);
 		couchit::Result res = q.exec();

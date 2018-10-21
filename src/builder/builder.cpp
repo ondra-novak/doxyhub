@@ -65,18 +65,52 @@ static void makeDir(const std::string &name) {
 class ExternalProcessWithLog: public ExternalProcess {
 public:
 	std::ostringstream output;
-	std::ostringstream error;
+	std::string stderr_linebuff;
+	std::string stdout_linebuff;
+	std::string tmp;
+	bool stderr_cr = false;
+	bool stdout_cr = false;
 
 	using ExternalProcess::ExternalProcess;
 
+	int execute(std::initializer_list<StrViewA> args) {
+		int res = ExternalProcess::execute(args);
+		flush();
+		if (res) output << "! "; else output << "- ";
+		output << "Exit code: " << res << std::endl;
+		return res;
+	}
+
 	virtual void onLogOutput(StrViewA line, bool error) {
-		if (error) this->error << line;
-		else this->output << line;
+		std::string &curline = error?stderr_linebuff:stdout_linebuff;
+		bool &flag = error?stderr_cr:stdout_cr;
+		for (auto c: line) {
+			if (c == '\n') {
+				if (error) output << "! "; else output << "- ";
+				output << curline;
+				output << std::endl;
+				flag = false;
+				curline.clear();
+			} else if (c == '\r') {
+				flag = true;
+			} else {
+				if (flag) curline.clear();
+				flag = false;
+				curline.push_back(c);
+			}
+		}
+	}
+
+	void flush() {
+
+		if (!stdout_linebuff.empty()) output << "- " << stdout_linebuff << std::endl;
+		if (!stderr_linebuff.empty()) output << "! " << stderr_linebuff << std::endl;
 	}
 
 	void clear() {
 		output = std::ostringstream();
-		error = std::ostringstream();
+		stderr_linebuff.clear();
+		stdout_linebuff.clear();
 	}
 
 
@@ -90,16 +124,17 @@ std::string Builder::get_git_last_revision(ExternalProcessWithLog &&git, const s
 	if (res != 0) throw std::runtime_error("GIT:Cannot retrive last revision for url: " + url);
 	std::string rev;
 	std::istringstream in(git.output.str());
-	in >> rev;
+	std::string tmp;
+	in >> tmp >> rev;
 	git.clear();
 	return rev;
 }
 
 static std::string combineLogs(std::ostringstream &git, std::ostringstream &doxygen) {
 	std::ostringstream tmp;
-	tmp << "-------- DOWNLOAD ------------" << std::endl;
+	tmp << "= -------- DOWNLOAD ------------" << std::endl;
 	tmp << git.str() << std::endl;
-	tmp << "-------- GENERATE ------------" << std::endl;
+	tmp << "= -------- GENERATE ------------" << std::endl;
 	tmp << doxygen.str() << std::endl;
 	return tmp.str();
 }
@@ -212,7 +247,6 @@ DoxyhubError Builder::buildDoc(const BuildRequest &req) {
 
 	this->revision = curRev;
 	this->log.clear();
-	this->warnings.clear();
 	if (curRev == req.revision) return DoxyhubError::not_modified;
 
 
@@ -238,12 +272,12 @@ DoxyhubError Builder::buildDoc(const BuildRequest &req) {
 		AGuard _(activeTool, &git);
 		res = git.execute({"clone","--progress","-b",req.branch,"--depth","1",req.url,"."});;
 	} catch (std::exception &e) {
-		git.error << std::endl << "Exception:" << e.what() << std::endl;
+		git.flush();
+		git.output << "! Exception:" << e.what() << std::endl;
 		res = -1;
 	}
 
 	this->log = git.output.str();
-	this->warnings = git.error.str();
 	if (res != 0) {
 		return git.wasTimeout()?DoxyhubError::git_clone_timeout:DoxyhubError::git_clone_failed;
 	}
@@ -265,12 +299,12 @@ DoxyhubError Builder::buildDoc(const BuildRequest &req) {
 		AGuard _(activeTool, &doxygen);
 		res = doxygen.execute({"Doxyfile.doxyhub.1316048469"});
 	} catch (std::exception &e) {
-		doxygen.error << std::endl << "Exception:" << e.what() << std::endl;
+		doxygen.flush();
+		doxygen.output << std::endl << "! Exception:" << e.what() << std::endl;
 		res = -1;
 	}
 
 	this->log = combineLogs(git.output, doxygen.output);
-	this->warnings = combineLogs(git.error, doxygen.error);
 
 	if (res != 0)  {
 		return doxygen.wasTimeout()?DoxyhubError::build_timeout:DoxyhubError::build_failed;

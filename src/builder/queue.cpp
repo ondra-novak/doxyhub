@@ -135,11 +135,8 @@ void Queue::processChange(const ChangeEvent &doc) {
 					curDoc.set("error_code",(int)r);
 				}
 
-				curDoc.inlineAttachment("stdout",AttachmentDataRef(
+				curDoc.inlineAttachment("log",AttachmentDataRef(
 						BinaryView(StrViewA(bld.log)),"text/plain"
-				));
-				curDoc.inlineAttachment("stderr",AttachmentDataRef(
-						BinaryView(StrViewA(bld.warnings)),"text/plain"
 				));
 				if (r == DoxyhubError::ok) {
 					auto endTime = std::chrono::system_clock::now();

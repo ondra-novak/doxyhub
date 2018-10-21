@@ -50,7 +50,6 @@ public:
 	void prepareDoxyfile(const std::string &source, const std::string &target, const std::string &buildPath, const std::string &url);
 
 	std::string log;
-	std::string warnings;
 	std::string revision;
 
 

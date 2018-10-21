@@ -38,6 +38,7 @@ protected:
 	std::string storage_path;
 
 	void sendAttachment(Value doc, StrViewA attchname, HTTPRequest req);
+	void sendFormattedAttachment(Value doc, StrViewA attchname, HTTPRequest req);
 	Value selectQueue();
 	Value generate_token();
 
@@ -48,6 +49,10 @@ protected:
 	bool checkBranchName(StrViewA branch) const;
 
 	void checkExist(const StrViewA &projectId, Value &doc);
+
+	template<typename Fn>
+	void sendAttachment(Value doc, StrViewA attchname, HTTPRequest req, Fn &&formatter, StrViewA content_type);
+
 };
 
 } /* namespace doxyhub */
