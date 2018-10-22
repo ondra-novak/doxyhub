@@ -132,7 +132,7 @@ dh-controlbox {
 	max-height: 0;
 	overflow: hidden;
 	margin-top: 0;
-	transition: all 1s;
+	transition: all 0.5s;
 	opacity: 0;
 	position:relative;
 	max-width: 30em;
@@ -201,7 +201,7 @@ dh-showlogbox.shown {
 
 button.when {
 	width:0;
-	transition: all 1s;
+	transition: all 0.5s;
 	overflow-y: hidden;
 	opacity: 0;
 	margin-left:auto;

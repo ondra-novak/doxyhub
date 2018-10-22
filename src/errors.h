@@ -18,6 +18,7 @@ enum class DoxyhubError {
 	internal_error = 600,
 	not_modified = 603,
 	no_space = 605,
+	git_connect_failed = 604,
 	git_clone_failed = 610,
 	git_clone_timeout = 611,
 	build_failed = 620,

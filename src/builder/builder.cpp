@@ -27,6 +27,7 @@ using simpleServer::SystemException;
 using ondra_shared::RAII;
 using ondra_shared::logDebug;
 using ondra_shared::logError;
+using ondra_shared::logNote;
 using ondra_shared::StrViewA;
 
 Builder::Builder(const Config& cfg, EnvVars envVars):cfg(cfg),envVars(envVars) {
@@ -121,7 +122,10 @@ public:
 std::string Builder::get_git_last_revision(ExternalProcessWithLog &&git, const std::string &url, const std::string &branch) {
 	AGuard _(activeTool, &git);
 	int res = git.execute({"ls-remote", url, branch});
-	if (res != 0) throw std::runtime_error("GIT:Cannot retrive last revision for url: " + url);
+	if (res != 0) {
+		logNote("GIT Failed, exit code: $1", res);
+		throw std::runtime_error("GIT:Cannot retrive last revision for url: " + url);
+	}
 	std::string rev;
 	std::istringstream in(git.output.str());
 	std::string tmp;
@@ -242,7 +246,14 @@ DoxyhubError Builder::buildDoc(const BuildRequest &req) {
 	ExternalProcessWithLog curl(cfg.curl, envVars, cfg.activityTimeout, cfg.totalTimeout);
 
 
-	std::string curRev = get_git_last_revision(std::move(git), req.url, req.branch);
+	std::string curRev;
+	try {
+		curRev = get_git_last_revision(std::move(git), req.url, req.branch);
+	} catch (...) {
+		git.flush();
+		this->log = git.output.str();
+		return DoxyhubError::git_connect_failed;
+	}
 
 
 	this->revision = curRev;

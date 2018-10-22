@@ -145,7 +145,7 @@ function start() {
 			case "error":
 				setStatus("error");
 				statfld.innerText = "error";
-				document.querySelector("#err_msg").innerText = document.getElementById("texts").getAttribute("data-err"+data.last_error);
+				document.querySelector("#err_msg").innerText = data.last_error+" "+document.getElementById("texts").getAttribute("data-err"+data.last_error);
 				break;
 			case "queued":
 				auto_open = true;
