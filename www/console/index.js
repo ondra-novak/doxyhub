@@ -5,6 +5,7 @@ function start() {
 	"use strict";
 	
 	var prevStatus = "";
+	var auto_open = false;
 	
 	function StatusChanger() {
 		var prevStatus = null;
@@ -137,6 +138,9 @@ function start() {
 			case "done":
 				setStatus("done");
 				statfld.innerHTML = "<a href='../'>available</a>";
+				var k = document.querySelector("#keep_console_open");
+				if (auto_open && !k.checked)
+					open_doc();
 				break;
 			case "error":
 				setStatus("error");
@@ -144,11 +148,13 @@ function start() {
 				document.querySelector("#err_msg").innerText = document.getElementById("texts").getAttribute("data-err"+data.last_error);
 				break;
 			case "queued":
+				auto_open = true;
 				setStatus("queued");
 				statfld.innerText = "queued";
 				update_interval = 2000;
 				break;
 			case "building":
+				auto_open = true;
 				setStatus("building");
 				statfld.innerText = "building";
 				if (data.build_time.avg_duration) {
@@ -283,6 +289,12 @@ function start() {
 		document.body.classList.remove("showlogs");
 		document.querySelector("#showmanifest").classList.remove("shown");
 	}
+
+	function open_doc() {
+		document.body.classList.add("showlogs");		
+		setTimeout(function(){location.href="..";},1000);
+	}
+	
 	
 	document.querySelector("#build_button").addEventListener("click",build_action);
 	document.querySelector("#show_log_button").addEventListener("click",showlog_action);
@@ -290,6 +302,7 @@ function start() {
 	document.querySelector("#closemanifest").addEventListener("click",closemanifest_action);
 	document.querySelector("#show_manifest").addEventListener("click",showmanifest_action);
 	document.querySelector("#download_button").addEventListener("click",function(){location.href="api/log.txt";});
+	document.querySelector("#open_doc").addEventListener("click",open_doc);
 	
 
 }

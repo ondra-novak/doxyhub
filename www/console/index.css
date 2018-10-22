@@ -312,3 +312,8 @@ img.check, img.error {
 img.error{
 	animation: shiver 3s infinite ease-in-out;
 }
+
+dh-controlbox button {
+	font-size: 0.6cm;
+	width: 5cm;
+}
