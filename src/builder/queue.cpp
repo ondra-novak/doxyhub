@@ -9,7 +9,8 @@
 #include <shared/logOutput.h>
 #include <shared/waitableEvent.h>
 #include <thread>
-#include <couchit/query.h>
+#include <couchit/query.tcc>
+
 
 
 namespace doxyhub {
@@ -51,10 +52,10 @@ Queue::Queue(Builder &bld, CouchDB &db, const std::string &queueId)
 
 		View b("_design/queue/_view/building", View::includeDocs|View::update);
 		couchit::Result res = db.createQuery(b).key(queueId).exec();
-		res.update(db,[](Document doc) {
+		res.update([](Document doc) {
 			doc.set("status","queued");
 			return doc;
-		});
+		}).commit(db);
 
 }
 

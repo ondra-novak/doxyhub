@@ -14,10 +14,15 @@
 
 namespace doxyhub {
 
+struct DBConfig: public couchit::Config {
+	bool conflicts;
+};
+
+
 class ServerConfig {
 public:
 
-	couchit::Config builderdb, controldb;
+	DBConfig builderdb, controldb;
 
 	std::string logfile;
 	std::string loglevel;
@@ -34,6 +39,8 @@ public:
 
 	std::string console_documentRoot;
 	std::string homepage_documentRoot;
+
+	std::string captchaScript;
 
 	void parse(const std::string &name);
 

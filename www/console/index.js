@@ -1,3 +1,5 @@
+var recaptcha_callback;
+var recaptcha_error_callback;
 
 function start() {
 	
@@ -162,9 +164,9 @@ function start() {
 					setProgress("bprogress",(Date.now()-(data.build_time.start*1000))/(dur*10), true);
 				} else {
 					switch (data.stage) {
-					case "checkrev": setFakeProgress("bprogress", 0,7,data.timestamp);break;
-					case "download": setFakeProgress("bprogress", 7,30,data.timestamp);break;
-					case "generate": setFakeProgress("bprogress", 30,90,data.timestamp);break;
+					case "checkrev": setFakeProgress("bprogress", 0,5,data.timestamp);break;
+					case "download": setFakeProgress("bprogress", 5,15,data.timestamp);break;
+					case "generate": setFakeProgress("bprogress", 15,90,data.timestamp);break;
 					case "upload": setFakeProgress("bprogress", 90,100,data.timestamp);break;
 					}					
 				}
@@ -190,8 +192,20 @@ function start() {
 	
 	statusFetch();
 	
+	
+	
 	function checkCaptcha() {
-		return Promise.resolve("zebra");
+		return new Promise(function(ok, cancel){
+			
+			recaptcha_callback = function(token) {
+				ok(token);				
+			}
+			recaptcha_error_callback = function(e) {
+				cancel(e);
+			}
+			
+			grecaptcha.execute()
+		});
 	}
 	
 	function showError(x) {
@@ -201,6 +215,11 @@ function start() {
 	}
 
 	function build_action() {
+
+		var b = document.querySelector("#build_button");
+		b.disabled=true;
+		setTimeout(function() {b.disabled=false;},3000);
+
 		checkCaptcha().then(function(ccode) {
 			var url;
 			var data;
@@ -225,6 +244,7 @@ function start() {
 				},
 				body: JSON.stringify(data),
 			}).then(function(resp) {
+				grecaptcha.reset();
 				if (resp.status == 200 || resp.status==201) {
 					resp.json().then(function(d){
 						if (d.redir) {
@@ -239,7 +259,8 @@ function start() {
 					showError(resp.status+" "+resp.statusText);
 				}
 			},function(err){
-					showError(err.toString());				
+				grecaptcha.reset();
+				showError(err.toString());				
 			});
 		});		
 	}

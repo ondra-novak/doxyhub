@@ -17,12 +17,13 @@ namespace doxyhub {
 
 using ondra_shared::IniConfig;
 
-static couchit::Config parseDBConfig(const IniConfig::KeyValueMap &d1) {
-	couchit::Config builderdb;
+static DBConfig parseDBConfig(const IniConfig::KeyValueMap &d1) {
+	DBConfig builderdb;
 	builderdb.authInfo.username = d1.mandatory["username"].getString();
 	builderdb.authInfo.password = d1.mandatory["password"].getString();
 	builderdb.baseUrl = d1.mandatory["url"].getString();
 	builderdb.databaseName = d1.mandatory["dbname"].getString();
+	builderdb.conflicts = d1["conflicts"].getBool(false);
 	return builderdb;
 }
 
@@ -55,6 +56,7 @@ void ServerConfig::parse(const std::string& name) {
 
 	const IniConfig::KeyValueMap &console = cfg["console"];
 	console_documentRoot = console.mandatory["document_root"].getPath();
+	captchaScript = console.mandatory["captcha"].getPath();
 
 	const IniConfig::KeyValueMap &homepage = cfg["hp"];
 	homepage_documentRoot = homepage.mandatory["document_root"].getPath();

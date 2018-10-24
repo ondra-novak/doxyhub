@@ -10,10 +10,10 @@
 
 #include <shared/worker.h>
 #include "config.h"
-#include "process.h"
+#include <common/process.h>
 #include "active.h"
 
-#include "../errors.h"
+#include <common/errors.h>
 
 namespace doxyhub {
 

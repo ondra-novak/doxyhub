@@ -7,7 +7,6 @@
 
 #include "queue.h"
 #include "config.h"
-#include "process.h"
 #include <simpleServer/abstractService.h>
 #include <couchit/changeObserver.h>
 #include <shared/raii.h>

@@ -24,6 +24,12 @@
 	data-err630="Upload failed"
 	></dh-texts>
 <div class="background">
+   <div class="g-recaptcha"
+          data-sitekey="6Lcus3YUAAAAAL80HTnqA4wNkU7IviowUsMkusZG"
+          data-callback="recaptcha_callback"
+          data-error-callback="recaptcha_error_callback"
+          data-size="invisible">
+    </div>
 <dh-top>
 <h1><a href="/">///@doxyhub.io </a></h1>
 <p>Project's console</p>
@@ -125,6 +131,7 @@ Generated files
 <label><input type="checkbox" id="keep_console_open" value="1"> Keep console open </label>
 </dh-bottompanel>
 </div>
+<script src='https://www.google.com/recaptcha/api.js' async></script>
 <script type="text/javascript" src="index.js"></script>
 </body>
 </html>

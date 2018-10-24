@@ -19,21 +19,26 @@
 #include "SiteServer.h"
 #include "consolePage.h"
 #include "homePage.h"
+#include <couchit/conflictresolver.h>
+#include <simpleServer/src/simpleServer/http_server.h>
 
 
 #include "initdb.h"
-#include "bldcontrol.h"
 
 #include "upload.h"
 #include "search.h"
+#include "captcha.h"
 
-
-class HomePage {
+class Conflicts: public couchit::ConflictResolver {
 public:
-
-
-protected:
-
+	virtual void onResolverError() override {
+		using namespace ondra_shared;
+		try {
+			throw;
+		} catch (const std::exception &e) {
+			logError("Conflict resolver error $1", e.what());
+		}
+	}
 
 };
 
@@ -61,17 +66,26 @@ int main(int argc, char **argv) {
 
 		StdLogFile::create(cfg.logfile, cfg.loglevel, LogLevel::debug)->setDefault();
 
+
 		control.enableRestart();
+
+		Captcha captcha(cfg.captchaScript);
+
 
 		CouchDB builderdb(cfg.builderdb);
 		CouchDB controldb(cfg.controldb);
 
 		initBuildDB(builderdb);
 
+		Conflicts conflict_resolver;
+		if (cfg.builderdb.conflicts) {
+			conflict_resolver.runResolver(builderdb);
+		}
+
 		AsyncProvider asyncProvider = ThreadPoolAsync::create(cfg.server_threads, cfg.server_dispatchers);
 		NetAddr addr = NetAddr::create(cfg.bind,8800,NetAddr::IPvAll);
 
-		ConsolePage consolePage(builderdb, cfg.console_documentRoot, cfg.upload_url, cfg.storage_path);
+		ConsolePage consolePage(builderdb,controldb, captcha, cfg.console_documentRoot, cfg.upload_url, cfg.storage_path);
 
 		SiteServer page_sources(consolePage, cfg.storage_path, cfg.pakCacheCnt, cfg.clusterCacheCnt);
 		UploadHandler upload(builderdb, cfg.storage_path, [&](auto &&a) {
@@ -79,51 +93,23 @@ int main(int argc, char **argv) {
 		});
 
 
-		RpcHttpServer serverObj(addr, asyncProvider);
+		MiniHttpServer serverObj(addr, asyncProvider);
 		RpcHttpServer::Config scfg;
 		scfg.enableConsole = true;
 		scfg.enableDirect = false;
 		scfg.enableWS = false;
 		scfg.maxReqSize = 65536;
 
-		serverObj.addRPCPath("/RPC", scfg);
-		serverObj.add_listMethods("methods");
-		serverObj.add_ping("ping");
-		serverObj.addPath("/docs", [&](const HTTPRequest &req, const StrViewA &vpath) {
-			return page_sources.serve(req, vpath);
-		});
-		serverObj.addPath("/upload",[&](const HTTPRequest &req, const StrViewA &vpath) {
-			return upload.serve(req, vpath);
-		});
-	/*	serverObj.addPath("/search",[&](HTTPRequest req, const StrViewA &vpath) mutable {
-			if (req.allowMethods({"HEAD","GET"})) {
-				String url;
-				String branch;
-				QueryParser qp(vpath);
-				for (auto &&kv : qp) {
-					if (kv.first == "url") {
-						url = kv.second;
-					}
-					if (kv.first == "branch") {
-						branch = kv.second;
-					}
-				}
-				if (url.empty() || branch.empty()) {
-					req.sendErrorPage(400);
-				} else {
-					Value res = searchStatusByUrl(builderdb,url, branch);
-					req.sendResponse("application/json",res.stringify());
-				}
-			}
-			return true;
-		});*/
 
-		serverObj.addPath("/", createHomepage(cfg.homepage_documentRoot,page_sources, builderdb));
+		serverObj >> HttpPathMapper<HttpStaticPathMapper>(HttpStaticPathMapper({
+			{"/upload",[&](const HTTPRequest &req, const StrViewA &vpath) {
+				return upload.serve(req, vpath);
+				}},
+			{"/",createHomepage(cfg.homepage_documentRoot,page_sources, builderdb)}
+		}));
 
-		BldControl bldcont(builderdb);
-		bldcont.init(serverObj);
 
-		serverObj.start();
+
 
 		control.dispatch();
 

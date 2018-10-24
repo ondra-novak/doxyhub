@@ -65,10 +65,14 @@ static couchit::View qstat("_design/queue/_view/stats",(couchit::View::groupLeve
 
 
 ConsolePage::ConsolePage(CouchDB& db,
+		CouchDB &cntrdb,
+		Captcha &captcha,
 		const std::string &document_root,
 		const std::string &upload_url,
 		const std::string &storage_path)
 	:db(db)
+	,cntrdb(cntrdb)
+	,captcha(captcha)
 	,fmapper(std::string(document_root),"index.html")
 	,upload_url(upload_url)
 	,storage_path(storage_path)
@@ -429,9 +433,8 @@ Value ConsolePage::generate_token() {
 	return db.genUID("build_token-");
 }
 
-bool ConsolePage::checkCapcha(StrViewA capcha) const {
-	//TODO:
-	return !capcha.empty();
+bool ConsolePage::checkCapcha(StrViewA c) const {
+	return captcha.check(c);
 }
 
 void ConsolePage::checkExist(const StrViewA &projectId, Value &doc) {

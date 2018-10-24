@@ -11,6 +11,7 @@
 #include <imtjson/value.h>
 #include <simpleServer/http_parser.h>
 #include <simpleServer/http_filemapper.h>
+#include "captcha.h"
 
 
 namespace doxyhub {
@@ -23,6 +24,8 @@ using json::Value;
 class ConsolePage {
 public:
 	ConsolePage(CouchDB &db,
+				CouchDB &cntrdb,
+				Captcha &captcha,
 				const std::string &document_root,
 				const std::string &upload_url,
 				const std::string &storage_path);
@@ -33,6 +36,8 @@ public:
 	void run_api(StrViewA projectId, HTTPRequest req, StrViewA api_path);
 protected:
 	CouchDB &db;
+	CouchDB &cntrdb;
+	Captcha &captcha;
 	HttpFileMapper fmapper;
 	std::string upload_url;
 	std::string storage_path;
